@@ -76,6 +76,98 @@
 
 ---
 
-## Future weeks
+## Week 2 (2026-06-11): HTTP envelope fix + Overview
 
-(Plan 2-5 progress will append below as work completes.)
+**Status: PASS**
+
+### Commits
+
+- 4810cc6 feat(http): dedicated kixHttp instance — no BaseResponse envelope
+- 8948b14 feat(views): migrate overview (first real P0 view)
+
+### Result
+
+- envelope mismatch (Plan 1 Known Issue #1) fully resolved
+- Overview view renders live-cards from real backend (HTTP 200 verified)
+- 15/15 tests pass
+
+## Week 3: P0 helpers + 4 remaining P0 views (Settings/Campaigns/Games/Builder)
+
+**Status: PASS**
+
+### Commits
+
+- 1db34fc feat(utils): extract fmtSgd + resolveBrandId
+- e99e7bf feat(views): migrate settings — brand profile
+- d7734af feat(views): migrate campaigns — list
+- b3daf7c feat(views): migrate games — my-games grid
+- 1153ff1 feat(views): migrate builder — entry view only
+
+### Result
+
+- All 5 P0 views shipped
+- 40/40 tests pass
+- Deferred: each view's secondary sub-sections (documented per-commit)
+
+## Week 4: StatusBadge + 6 P1 views
+
+**Status: PASS**
+
+### Commits
+
+- dd4c899 feat(components): extract StatusBadge
+- 982357c feat(views): migrate flows
+- f20f517 feat(views): migrate reports
+- e4bdb1b feat(views): migrate customer-list
+- be11e62 feat(views): migrate audiences
+- e6b5020 feat(views): migrate ab-tests
+- 6b8fef5 feat(views): migrate rules
+
+### Result
+
+- 6 P1 views shipped; 11/29 routes real
+- 71/71 tests pass
+
+## Week 5: P2 audit + curated 7 views + Rewards consolidation
+
+**Status: PASS**
+
+### Audit decision (2026-06-11)
+
+Original spec had 19 P2 views; audit recommended subtraction:
+
+- KEEP: templates, cases, vip-tiers, storefront, billing (+invoices), geofences, creatives
+- CONSOLIDATE: vouchers + coupons-qr + game-rewards + prizes → single /rewards
+- DROP/DEFER: primitives, cohort, attribution, pixel, operations, messages Final sidebar: 19 entries (down from 29).
+
+### Commits
+
+- 1aaebb3 chore: P2 audit cleanup — rename ab-tests, prune sidebar
+- 433c9a4 feat(views): migrate templates
+- 151e2d1 feat(views): migrate cases
+- d25eb73 feat(views): migrate vip-tiers
+- edee607 feat(views): migrate storefront
+- 37a440e feat(views): migrate billing (+ invoices)
+- bd199c4 feat(views): migrate geofences
+- b7249ad feat(views): migrate creatives
+- 090f342 feat(views): migrate rewards — consolidated 4-tab view
+
+### Result
+
+- 18 real views (P0:5 + P1:6 + P2:7) of 30 total routes
+- 110/110 tests pass
+
+## Week 6: E2E + cutover preparation
+
+**Status: IN PROGRESS** (this plan)
+
+## Plan 7: Production cutover (HELD)
+
+Requires user approval. See `DEPLOY.md` for full SOP. Summary:
+
+1. Build + deploy portal-v2 dist to `/portal/` on production nginx
+2. Modify `kix-platform/landing/signin.html` to redirect to portal-v2 by default
+3. Monitor 401/5xx for 1-2 weeks
+4. Archive `kix-platform/landing/portal.html` → `_archive/`
+
+Rollback: revert signin.html redirect; portal-v2 keeps serving.
