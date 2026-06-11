@@ -20,9 +20,17 @@
       "@utils/*": ["src/utils/*"],
       "@stores/*": ["src/store/*"],
       "@plugins/*": ["src/plugins/*"],
-      "@styles/*": ["src/assets/styles/*"]
+      "@styles/*": ["src/assets/styles/*"],
+      "@locales/*": ["locales/*"]
     }
   },
-  "include": ["src/**/*", "src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "include": [
+    "src/**/*",
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "locales/**/*.json"
+  ],
   "exclude": ["node_modules", "dist", "**/*.js"]
 }
