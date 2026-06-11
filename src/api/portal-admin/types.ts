@@ -728,3 +728,100 @@ export type TemplatesListResponse =
       reskin_count?: number
       catalog_only_count?: number
     }
+
+// ---------------------------------------------------------------------------
+// Cases view · Case Studio prospects grid
+// ---------------------------------------------------------------------------
+//
+// Source: kix-platform/landing/portal.html · `<section id="view-cases">`
+// (lines 1730-1748) + legacy fetcher `kixLoadCases()` (~line 8461) +
+// renderer inlined at ~line 8475-8489.
+//
+// Wire endpoint:
+//   GET /api/v1/portal-admin/case-studio/prospects
+//
+// `KIX_CASES_API` is hard-coded to `/api/v1/portal-admin/case-studio` at
+// portal.html line 8460, so the prospects list hangs off the case-studio
+// router. No `?brand=` param — the Case Studio is a platform-internal
+// sales tool (per-prospect research + deck gen) keyed by `prospect_id`,
+// not by merchant brand. See the router mount in app/main.py line 1043
+// (prefix `/api/v1/portal-admin`, FastAPI route `GET /case-studio/prospects`
+// at case_studio.py line 89-92, returns `{ "prospects": _list_prospects() }`).
+//
+// Backend response wrapper (case_studio.py line 91):
+//   {
+//     prospects: CaseStudyProspect[],   // bare list of seeded + draft profiles
+//   }
+// The legacy renderer reads `(data && data.prospects) || []`. We accept
+// bare arrays + `{ items }` defensively for parity with the rest of the
+// portal-admin surface, even though the canonical wire shape is `{ prospects }`.
+//
+// Per-prospect fields read by the legacy card renderer (portal.html line
+// 8475-8488). Every field is optional from a defensive-rendering POV
+// except `prospect_id` (row key + click target):
+//   - prospect_id:     opaque slug (e.g. "nana", "starbucks_sg") — row key,
+//                      also embedded into deck routes (`/landing/decks/<id>/`).
+//   - company_name:    display title (e.g. "Nana", "Starbucks SG"). The
+//                      legacy renderer reads it raw; we fall back to
+//                      prospect_id then "Prospect" for resilience.
+//   - primary_url:     prospect's homepage URL — rendered as a small
+//                      muted subtitle row under the title.
+//   - tagline:         one-line pitch description (e.g. "Saudi q-commerce
+//                      leader · 600+ SKUs · 30-min delivery"). Rendered as
+//                      the card body copy.
+//   - research_status: 'complete' | 'draft' | 'in_progress' | … — drives
+//                      the corner badge colour. The legacy renderer hard-
+//                      codes the colour pair: `'complete'` → green
+//                      (#16A34A on #DCFCE7), everything else → amber
+//                      (#92400E on #FEF3C7). We map onto the shared
+//                      `<StatusBadge>` via: 'complete' → 'active' (green),
+//                      'draft' → 'draft' (gray), anything else → 'pending'
+//                      (amber), preserving the binary colour intent.
+//
+// Plan 5 T2 ports ONLY the page header + the prospects grid of cards
+// (title · primary_url subtitle · tagline · research_status badge).
+// DEFERRED (legacy still owns these surfaces):
+//   - "+ New case" CTA (`kixNewCase()` at portal.html line 8551) — prompts
+//     for name/url/vertical, POSTs `/case-studio/prospects` to create a
+//     draft seed JSON on disk.
+//   - "📊 Open deck" CTA (`kixOpenDeck()` at line 8505) — HEAD-checks
+//     `/landing/decks/<id>/index.html`, falls back to a synchronous
+//     `POST /case-studio/prospects/<id>/render-deck` then opens the
+//     returned `deck_url` in a new tab (popup-blocker dance included).
+//   - "↻ Regenerate" CTA (`kixCasesRegenerate()` at line 8526) — same
+//     POST, but always re-renders and alerts with the slide count + sha.
+//   - Detail panel — the per-prospect full profile (3 Trinity legs,
+//     12-slide deck spec, decision-maker map, competitor matrix, ROI
+//     math) currently lives ONLY in the rendered HTML deck under
+//     `/landing/decks/<id>/`. The portal has no in-app detail surface yet.
+//   - Hero feature card (the big gradient panel at portal.html line
+//     1739-1743 explaining the feature) — pure copy, no data. Skipped in
+//     the first cut to keep the four-state pattern clean; can be folded
+//     back in once the i18n keys are wired.
+//   - Spinner glyph (`<span class="spinner">`) on the loading row — the
+//     v2 view uses a flat text "Loading prospects…" placeholder, matching
+//     the Templates / Rules / AbTests convention.
+
+export type CaseStudyResearchStatus = 'complete' | 'draft' | 'in_progress' | string
+
+export interface CaseStudy {
+  prospect_id: string
+  company_name?: string
+  primary_url?: string
+  tagline?: string
+  research_status?: CaseStudyResearchStatus
+}
+
+/**
+ * Backend canonical shape is `{ prospects }` (the legacy renderer's
+ * `(data && data.prospects) || []` read at portal.html line 8466).
+ * Bare arrays + `{ items }` are tolerated for defensive parity with
+ * Campaigns / Audiences / Flows / Templates — the view normalises all
+ * three variants.
+ */
+export type CasesListResponse =
+  | CaseStudy[]
+  | {
+      prospects?: CaseStudy[]
+      items?: CaseStudy[]
+    }
