@@ -13,7 +13,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 
-vi.mock('@/api/portal-admin/abtests', () => ({
+vi.mock('@/api/portal-admin/ab-tests', () => ({
   listAbTests: vi.fn()
 }))
 
@@ -22,7 +22,7 @@ vi.mock('vue-i18n', () => ({
 }))
 
 import AbTests from '../AbTests.vue'
-import { listAbTests } from '@/api/portal-admin/abtests'
+import { listAbTests } from '@/api/portal-admin/ab-tests'
 
 // Schema mirrors `_demo_abtests()` at app/routers/portal_admin.py:2605 —
 // the exact rows the backend emits for demo brands.

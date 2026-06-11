@@ -46,7 +46,7 @@
    */
   import { computed, onMounted, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { listAbTests } from '@/api/portal-admin/abtests'
+  import { listAbTests } from '@/api/portal-admin/ab-tests'
   import type { AbTest } from '@/api/portal-admin/types'
   import StatusBadge from '@/components/StatusBadge.vue'
 

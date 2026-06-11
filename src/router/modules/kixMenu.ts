@@ -1,11 +1,22 @@
 /**
- * KiX Portal sidebar menu (Plan 1 Task 8)
+ * KiX Portal sidebar menu (Plan 1 Task 8, trimmed by Plan 5 Task 0)
  *
  * Replaces art-design-pro's demo menu (dashboard / template / widgets / examples /
- * system / article / result / exception / safeguard / help). Surfaces the 29
- * KiX views mounted in Task 7 (`portal-routes.ts`) under a 7-group structure:
- *   overview (solo leaf) + games / marketing / audience / loyalty / finance /
- *   analytics / system (6 group parents, 28 leaves).
+ * system / article / result / exception / safeguard / help). After the P2 audit
+ * (Plan 5 Task 0) the sidebar surfaces only the entries that have a concrete
+ * Plan 5 implementation slot — 11 entries are deferred or merged, 1 new leaf
+ * (`/rewards`) consolidates the prizes / game-rewards / vouchers / coupons-qr
+ * trio. The 29 underlying routes in `portal-routes.ts` are retained so
+ * deep-links and external bookmarks don't 404; the sidebar just stops
+ * surfacing the deferred ones.
+ *
+ * Deferred/removed from sidebar (still routable):
+ *   primitives, messages (marketing) · cohort (audience) ·
+ *   prizes, game-rewards, vouchers, coupons-qr (loyalty — merged into Rewards) ·
+ *   invoices (finance — merged into Billing) ·
+ *   attribution, pixel (analytics) · operations (system)
+ *
+ * Added: rewards (loyalty group, placeholder until Plan 5 T8).
  *
  * ## Why absolute child paths
  *
@@ -112,18 +123,6 @@ export const kixMenuRoutes: AppRouteRecord[] = [
         name: 'KixCases',
         component: PLACEHOLDER,
         meta: { title: 'menus.cases', icon: 'ri:book-2-line' }
-      },
-      {
-        path: '/primitives',
-        name: 'KixPrimitives',
-        component: PLACEHOLDER,
-        meta: { title: 'menus.primitives', icon: 'ri:shapes-line' }
-      },
-      {
-        path: '/messages',
-        name: 'KixMessages',
-        component: PLACEHOLDER,
-        meta: { title: 'menus.messages', icon: 'ri:message-3-line' }
       }
     ]
   },
@@ -149,12 +148,6 @@ export const kixMenuRoutes: AppRouteRecord[] = [
         meta: { title: 'menus.customer_list', icon: 'ri:contacts-book-line' }
       },
       {
-        path: '/cohort',
-        name: 'KixCohort',
-        component: PLACEHOLDER,
-        meta: { title: 'menus.cohort', icon: 'ri:pie-chart-2-line' }
-      },
-      {
         path: '/rules',
         name: 'KixRules',
         component: PLACEHOLDER,
@@ -178,28 +171,10 @@ export const kixMenuRoutes: AppRouteRecord[] = [
     },
     children: [
       {
-        path: '/coupons-qr',
-        name: 'KixCouponsQr',
+        path: '/rewards',
+        name: 'KixRewards',
         component: PLACEHOLDER,
-        meta: { title: 'menus.coupons_qr', icon: 'ri:coupon-3-line' }
-      },
-      {
-        path: '/vouchers',
-        name: 'KixVouchers',
-        component: PLACEHOLDER,
-        meta: { title: 'menus.vouchers', icon: 'ri:ticket-2-line' }
-      },
-      {
-        path: '/prizes',
-        name: 'KixPrizes',
-        component: PLACEHOLDER,
-        meta: { title: 'menus.prizes', icon: 'ri:trophy-line' }
-      },
-      {
-        path: '/game-rewards',
-        name: 'KixGameRewards',
-        component: PLACEHOLDER,
-        meta: { title: 'menus.game_rewards', icon: 'ri:gift-line' }
+        meta: { title: 'menus.rewards', icon: 'ri:gift-line' }
       },
       {
         path: '/vip-tiers',
@@ -229,12 +204,6 @@ export const kixMenuRoutes: AppRouteRecord[] = [
         name: 'KixBilling',
         component: PLACEHOLDER,
         meta: { title: 'menus.billing', icon: 'ri:bank-card-line' }
-      },
-      {
-        path: '/invoices',
-        name: 'KixInvoices',
-        component: PLACEHOLDER,
-        meta: { title: 'menus.invoices', icon: 'ri:file-text-line' }
       }
     ]
   },
@@ -254,18 +223,6 @@ export const kixMenuRoutes: AppRouteRecord[] = [
         meta: { title: 'menus.reports', icon: 'ri:file-chart-line' }
       },
       {
-        path: '/attribution',
-        name: 'KixAttribution',
-        component: PLACEHOLDER,
-        meta: { title: 'menus.attribution', icon: 'ri:share-forward-line' }
-      },
-      {
-        path: '/pixel',
-        name: 'KixPixel',
-        component: PLACEHOLDER,
-        meta: { title: 'menus.pixel', icon: 'ri:focus-3-line' }
-      },
-      {
         path: '/geofences',
         name: 'KixGeofences',
         component: PLACEHOLDER,
@@ -282,12 +239,6 @@ export const kixMenuRoutes: AppRouteRecord[] = [
       icon: 'ri:settings-3-line'
     },
     children: [
-      {
-        path: '/operations',
-        name: 'KixOperations',
-        component: PLACEHOLDER,
-        meta: { title: 'menus.operations', icon: 'ri:terminal-box-line' }
-      },
       {
         path: '/settings',
         name: 'KixSettings',

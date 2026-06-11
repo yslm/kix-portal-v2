@@ -225,6 +225,21 @@ export const portalRoutes: RouteRecordRaw[] = [
       legacyViewId: 'view-storefront'
     } satisfies PortalRouteMeta
   },
+  {
+    // Consolidated rewards view — merges prizes / game-rewards / vouchers /
+    // coupons-qr (deferred sidebar entries). Real implementation lands in
+    // Plan 5 T8; the synthetic `legacyViewId` doesn't map to any single
+    // legacy `<section id="view-*">` because no such consolidated view
+    // existed in portal.html — this is a new aggregator.
+    path: '/rewards',
+    name: 'rewards',
+    component: Placeholder,
+    meta: {
+      title: 'Rewards',
+      group: 'loyalty',
+      legacyViewId: 'view-rewards-consolidated'
+    } satisfies PortalRouteMeta
+  },
 
   {
     path: '/billing',
