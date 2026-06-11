@@ -159,7 +159,20 @@ Original spec had 19 P2 views; audit recommended subtraction:
 
 ## Week 6: E2E + cutover preparation
 
-**Status: IN PROGRESS** (this plan)
+**Status: PASS**
+
+### Commits
+
+- 1c92528 docs(PROGRESS): Plan 2-5 retrospective + Plan 7 hold
+- f519e42 chore(e2e): install + configure Playwright
+- b7e6782 feat(e2e): smoke tests for token guard + P0 views
+- 78894f0 docs: README quickstart + DEPLOY.md SOP
+
+### Result
+
+- 110/110 vitest pass + 6/6 playwright e2e pass
+- README quickstart + DEPLOY.md cutover SOP shipped
+- Plan 7 cutover documented; held pending user approval
 
 ## Plan 7: Production cutover (HELD)
 
