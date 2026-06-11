@@ -276,3 +276,73 @@ export type FlowsListResponse =
   | { flows?: AutomationFlow[]; items?: AutomationFlow[] }
   | AutomationFlow[]
   | ApiListResponse<AutomationFlow>
+
+// ---------------------------------------------------------------------------
+// Reports view · owner summary card (Simple mode)
+// ---------------------------------------------------------------------------
+//
+// Source: kix-platform/landing/portal.html · `kixLoadOwnerReport()`
+// (~line 3978). This is the "three numbers a shop owner actually asks":
+// new faces · today's redemptions · players who came back. It is shown in
+// the `#owner-report` card on the Reports view when `body.kix-mode-simple`
+// is on. The legacy code composes the three numbers from THREE separate
+// portal-admin endpoints:
+//
+//   GET /api/v1/portal-admin/overview           (StatusStrip — new_customers_7d)
+//   GET /api/v1/portal-admin/redemptions/today  ({ count, value_str, recent })
+//   GET /api/v1/portal-admin/customers/rfm-summary
+//                                               ({ segments: { champions, loyal,
+//                                                              at_risk, new, lost },
+//                                                  sampled, brand_id, basis })
+//
+// Repeat (players who came back) = champions + loyal + at_risk per the
+// legacy aggregator (portal.html line 3990-3992).
+//
+// Plan 4 T2 ports ONLY this Simple-mode owner card. Deferred: the
+// Advanced-mode `Performance / Engagement / Live monitoring` tabs and
+// their KPI grid + top-campaigns table + funnel + heatmap + live feed.
+
+export interface StatusStrip {
+  wallet_sgd: number
+  new_customers_7d: number
+  new_customers_7d_delta_pct: number
+  campaigns_live: number
+  runway_days: number
+  burn_per_day_sgd: number
+  health: 'green' | 'amber' | 'red' | string
+  // Some envs return additional/older fields — accept defensively.
+  new_customers?: number
+}
+
+export interface RedemptionsTodayResponse {
+  count: number
+  value_str?: string
+  recent?: unknown[]
+}
+
+export interface RfmSegments {
+  champions: number
+  loyal: number
+  at_risk: number
+  new: number
+  lost: number
+}
+
+export interface RfmSummaryResponse {
+  brand_id?: string
+  sampled?: number
+  segments: RfmSegments
+  basis?: string
+}
+
+/**
+ * Composed shape the Reports view consumes. Each field is independent and
+ * may be `null` when its underlying endpoint failed (the legacy renderer
+ * tolerates partial data — every fetch is `.catch(() => null)`).
+ */
+export interface OwnerReportSummary {
+  newCustomers: number | null
+  redemptionsToday: number | null
+  // champions + loyal + at_risk per legacy aggregator (line 3990-3992).
+  returningPlayers: number | null
+}
