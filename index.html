@@ -1,7 +1,31 @@
 <!doctype html>
 <html>
   <head>
-    <title>Art Design Pro</title>
+    <title>KiX Ads Manager · Merchant cockpit</title>
+    <script>
+      ;(function () {
+        try {
+          var RTL = ['ar', 'he', 'fa', 'ur']
+          var qs = new URLSearchParams(window.location.search).get('lang')
+          var stored = (function () {
+            try {
+              return localStorage.getItem('kix_locale')
+            } catch (_) {
+              return null
+            }
+          })()
+          var nav = (navigator.languages && navigator.languages[0]) || navigator.language || 'en'
+          var loc = qs || stored || nav || 'en'
+          var primary = String(loc).split('-')[0].toLowerCase()
+          if (RTL.indexOf(primary) >= 0) {
+            document.documentElement.setAttribute('dir', 'rtl')
+            document.documentElement.setAttribute('lang', loc)
+          }
+        } catch (_) {
+          /* no-op · runtime will fix later */
+        }
+      })()
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
