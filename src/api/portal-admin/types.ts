@@ -1166,3 +1166,106 @@ export interface BillingResponse extends WalletBalance {
   invoices?: Invoice[] | null
   per_brand?: BillingBrandSpend[] | null
 }
+
+// ---------------------------------------------------------------------------
+// Geofences view · stores / locations list
+// ---------------------------------------------------------------------------
+//
+// Source: kix-platform/landing/portal.html · `<section id="view-geofences">`
+// (lines 2161-2205) + legacy fetcher `kixLoadGeofences()` (~line 4722) +
+// the inlined table renderer at ~line 4734-4742.
+//
+// Wire endpoint:
+//   GET /api/v1/portal-admin/locations
+//     → { locations: Location[] }
+//
+// `kixLoadGeofences()` reads `(data && data.locations) || []`. Brand
+// inferred from the JWT — no `?brand=` param, same pattern as
+// listCustomers() / listAudiences() / listRules() / listAbTests() /
+// listTemplates() / fetchWallet(). The renderer also exists in two
+// other call-sites (the QR picker on view-coupons-qr at line 4618, and
+// the redeem store-picker at line 4774) which all hit the same endpoint.
+//
+// Despite the merchant-facing surface being called "Geofences · Stores",
+// the wire model is `Location` — each store IS a geofence (centre point +
+// radius). The legacy Add-store form (deferred) calls the same `/locations`
+// route via POST with a `{ name, place_id, geocoded_address, radius_m, …}`
+// payload — see portal.html line 4774-4781.
+//
+// Per-row fields read by the legacy table renderer at line 4737:
+//   - id:         opaque location id (`<code>` cell, row key)
+//   - name:       display title (e.g. "Toast Box · Tampines Mall");
+//                 em-dash fallback when absent.
+//   - address:    geocoded street address; em-dash fallback. The legacy
+//                 backend may not emit this for stores added before the
+//                 address-widget upgrade (Wave1 PR-3 · B54-B59), in which
+//                 case the row still renders cleanly with "—".
+//   - radius_m:   integer · trigger radius in metres; defaults to 50 when
+//                 absent (matches the legacy `l.radius_m||50` read).
+//   - status:     currently the legacy view hard-codes every row to
+//                 "Active" (no per-row status flag on the wire). Typed
+//                 here so a future slice can render a real status pill if
+//                 the backend starts emitting one.
+//   - lat / lng:  the canonical raw coordinates the address widget
+//                 resolves. The legacy table renderer does NOT show them
+//                 (Class O leak — see the address-widget comment at
+//                 portal.html line 2173-2179) but they exist on the wire
+//                 for the deferred map drawing editor.
+//   - place_id / geocoded_address: the canonical place handle (Wave1
+//                 PR-3) — drives the map pin in the editor; not rendered
+//                 in the table.
+//
+// Plan 5 T6 ports ONLY: page header + read-only stores table (ID · Name
+// · Address · Radius · Status). DEFERRED (legacy still owns these
+// surfaces; see view-geofences add-store form at portal.html line
+// 2169-2199):
+//   - "+ Add store" CTA + the slide-in form (`kixToggleAddLocation()`
+//     at line 2170 + `kixAddLocation()` at line 4748)
+//   - Address autocomplete widget — Mapbox primary + Nominatim fallback
+//     (the inline IIFE `kixWireAddressWidget` at ~line 4790)
+//   - Draggable map pin (`#loc-map` placeholder; map provider deferred
+//     behind `window.KIX_MAPBOX_TOKEN`)
+//   - Radius slider (`#loc-radius`) with live "X m" preview label
+//   - Hidden geocoded state capture (`place_id` / `geocoded_address` /
+//     `resolved_lat` / `resolved_lng`)
+//   - Per-row Edit / Delete actions — not in the legacy table either
+//     (the only mutation surface is the Add-store form), but a later
+//     slice can layer them onto the same `/locations` endpoint family.
+
+export interface Location {
+  id: string
+  name?: string
+  address?: string
+  radius_m?: number
+  // Status pill — legacy view hard-codes "Active"; typed for future use.
+  status?: 'active' | 'inactive' | string
+  // Wave1 PR-3 canonical address handle (deferred map editor reads it).
+  place_id?: string
+  geocoded_address?: string
+  // Raw coordinates (Class O — not rendered in the table; typed for the
+  // deferred map drawing editor).
+  lat?: number
+  lng?: number
+  created_at?: string
+}
+
+/**
+ * Geofence alias. The merchant-facing surface calls them "geofences"
+ * but the wire model is `Location` — typed both ways so future slices
+ * can choose the lexicon that fits their site without a re-shape.
+ */
+export type Geofence = Location
+
+/**
+ * Backend canonical shape is `{ locations }` (matches the legacy
+ * renderer's `(data && data.locations) || []` read at portal.html
+ * line 4621 / 4731). Bare arrays + `{ items }` are tolerated for
+ * defensive parity with the rest of the portal-admin surface — the
+ * view normalises all three variants.
+ */
+export type GeofencesListResponse =
+  | Location[]
+  | {
+      locations?: Location[]
+      items?: Location[]
+    }

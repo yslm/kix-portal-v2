@@ -17,6 +17,7 @@ const Cases = () => import('@/views/kix/Cases.vue')
 const VipTiers = () => import('@/views/kix/VipTiers.vue')
 const Storefront = () => import('@/views/kix/Storefront.vue')
 const Billing = () => import('@/views/kix/Billing.vue')
+const Geofences = () => import('@/views/kix/Geofences.vue')
 
 export interface PortalRouteMeta {
   title: string
@@ -305,7 +306,7 @@ export const portalRoutes: RouteRecordRaw[] = [
   {
     path: '/geofences',
     name: 'geofences',
-    component: Placeholder,
+    component: Geofences,
     meta: {
       title: 'Geofences',
       group: 'analytics',
