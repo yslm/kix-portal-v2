@@ -468,3 +468,95 @@ export type AudiencesListResponse =
   | Audience[]
   | { audiences?: Audience[]; items?: Audience[] }
   | ApiListResponse<Audience>
+
+// ---------------------------------------------------------------------------
+// AbTests view · A/B tests list
+// ---------------------------------------------------------------------------
+//
+// Source: kix-platform/landing/portal.html · `<section id="view-abtests">`
+// (lines 1911-1928) + legacy fetcher `kixLoadAbTests()` (~line 6965).
+// Endpoint: GET /api/v1/portal-admin/ab-tests (brand inferred from JWT
+// via `get_current_brand` dependency — no explicit `?brand=` param, same
+// pattern as `listCustomers()` / `listAudiences()`).
+//
+// Backend (app/routers/portal_admin.py line 2649) returns a wrapper:
+//   {
+//     items: AbTest[],
+//     source: 'redis · abtests:<bid>',
+//     updated_at: ISO timestamp,
+//     freshness: 'real-time',
+//     campaign_count: int,
+//     can_create: bool,                    // false when < 2 campaigns
+//     empty_state_hint: string | null,     // gated copy for empty state
+//   }
+//
+// Each test row carries the fields the legacy renderer reads at portal.html
+// line 6986-7008 (every field is optional from a defensive-rendering POV
+// except `id` — the FastAPI route always emits id+name+status+created_at
+// for both demo + real data, but we treat the rest as nullable in case
+// the schema evolves):
+//
+//   - id:               opaque test id (row key)
+//   - name:             display title (e.g. "Morning Combo · CTA copy")
+//   - campaign_a_id:    variant A campaign id (always present)
+//   - campaign_a_name:  variant A display name; falls back to id
+//   - campaign_b_id:    variant B campaign id (always present)
+//   - campaign_b_name:  variant B display name; falls back to id
+//   - metric:           'CTR' | 'CPA' | 'Conversion' | 'Redemption' | 'Lift'
+//                       (server-enforced enum — see ABTestCreate model)
+//   - status:           'running' | 'significant' | 'shipped' | 'stopped'
+//                       — drives the badge + Ship CTA gating
+//   - lift_pct:         signed percentage (e.g. +18.4 / -2.1); null when
+//                       the engine has no verdict yet
+//   - p_value:          significance p-value; null until exposures > 0
+//   - winner:           'a' | 'b' — set when status == 'shipped'
+//   - created_at:       ISO timestamp string
+//
+// Plan 4 T5 ports ONLY the page header + tests list table. DEFERRED:
+//   - New-test create form (`#abtest-modal` at portal.html line 7036) +
+//     POST `/api/v1/portal-admin/ab-tests`
+//   - Per-test results dashboard (`kixAbTestView()` + GET
+//     `/api/v1/portal-admin/ab-tests/<id>/results` at line 7092)
+//   - Ship-winner CTA (`kixAbTestShip()` + POST
+//     `/api/v1/portal-admin/ab-tests/<id>/ship` at line 7147)
+//   - Variant editor (currently lives in the modal — single-shot picker)
+//   - Fail-closed empty state that flips between "+ New test" and
+//     "Go to Campaigns →" based on `can_create` / `campaign_count`
+//   - Lift / p-value formatted columns (green / red colouring)
+
+export type AbTestStatus = 'running' | 'significant' | 'shipped' | 'stopped' | string
+export type AbTestMetric = 'CTR' | 'CPA' | 'Conversion' | 'Redemption' | 'Lift' | string
+
+export interface AbTest {
+  id: string
+  name?: string
+  campaign_a_id?: string
+  campaign_a_name?: string
+  campaign_b_id?: string
+  campaign_b_name?: string
+  metric?: AbTestMetric
+  status?: AbTestStatus
+  lift_pct?: number | null
+  p_value?: number | null
+  winner?: 'a' | 'b' | string
+  created_at?: string
+}
+
+/**
+ * Backend canonical shape is the `{ items, source, updated_at, ... }`
+ * wrapper. We also accept bare arrays and `{ abtests }` / `{ ab_tests }`
+ * wrappers defensively, mirroring the Campaigns / Audiences / Flows
+ * pattern — the view normalises all variants.
+ */
+export type AbTestsListResponse =
+  | AbTest[]
+  | {
+      items?: AbTest[]
+      abtests?: AbTest[]
+      ab_tests?: AbTest[]
+      source?: string
+      updated_at?: string
+      can_create?: boolean
+      campaign_count?: number
+      empty_state_hint?: string | null
+    }
