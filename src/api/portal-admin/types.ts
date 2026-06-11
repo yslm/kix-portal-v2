@@ -399,3 +399,72 @@ export type CustomersListResponse =
   | { customers?: Customer[]; items?: Customer[] }
   | Customer[]
   | ApiListResponse<Customer>
+
+// ---------------------------------------------------------------------------
+// Audiences view · saved-audiences table
+// ---------------------------------------------------------------------------
+//
+// Source: kix-platform/landing/portal.html · `<section id="view-audiences">`
+// (lines 1822-1866) + the legacy renderer `_kixRenderAudiencesRows()` at
+// line 6769-6785 and `kixLoadAudiences()` at line 6799-6807.
+//
+// The live legacy view hits the PAGINATED route
+//   GET /api/v1/portal/settings/audiences/<bid>/page?page=&page_size=
+// which returns `{ items, total, has_more }` with an inline row schema of
+//   { audience_id, name, source, size, last_refreshed_at: { formatted_display },
+//     status }
+// — a settings-router shape with brand id explicit in the URL.
+//
+// Plan 4 T4 ports against the SIMPLER `/api/v1/portal-admin/audiences`
+// endpoint instead, which:
+//   - returns a bare `Audience[]` (FastAPI `response_model=list[Audience]`,
+//     see app/routers/portal_admin.py line 571)
+//   - infers brand from the JWT (`get_current_brand` dependency) — no
+//     explicit brand arg, same pattern as `listCustomers()` in Plan 4 T3
+//   - emits demo data with the canonical Audience pydantic model fields
+//     (id, name, type, size_estimate, geofence_m?, created_at,
+//     last_used_at?) — see portal_admin.py line 185-192
+//
+// Trade-off documented: the portal-admin route has no `status`, no
+// `source` (it has `type` instead — geofence / lookalike / retargeting /
+// custom), and no `last_refreshed_at`. We render `type` as a small badge
+// (UX intent identical to the channel badge in CustomerList) and surface
+// `last_used_at` in the date column. The richer paginated settings route
+// + StatusBadge wiring + pagination controls + new-audience form + edit +
+// RFM-summary integration are DEFERRED to later Plan 4 sub-tasks.
+//
+// Fields on the portal-admin Audience model (every field except id+name
+// is rendered defensively — backend always emits id/name/type/created_at
+// but we treat the optional ones as nullable in case the schema evolves):
+//
+//   - id:            opaque audience id (row key)
+//   - name:          display title (e.g. "Bedok · 200m geofence")
+//   - type:          'geofence' | 'lookalike' | 'retargeting' | 'custom'
+//   - size_estimate: integer · members in the saved segment
+//   - geofence_m:    integer · radius in metres (only for geofence type)
+//   - created_at:    ISO date string
+//   - last_used_at:  ISO date string · when the audience was last referenced
+//                    by a campaign / flow / push. May be null for unused.
+
+export type AudienceType = 'geofence' | 'lookalike' | 'retargeting' | 'custom' | string
+
+export interface Audience {
+  id: string
+  name: string
+  type?: AudienceType
+  size_estimate?: number
+  geofence_m?: number | null
+  created_at?: string
+  last_used_at?: string | null
+}
+
+/**
+ * Portal-admin endpoint returns a bare array. We also accept the legacy
+ * paginated `{ items }` wrapper and the `{ audiences }` wrapper used by
+ * the settings-router endpoint defensively, mirroring the Campaigns /
+ * Customers / Flows pattern. The view normalises all three.
+ */
+export type AudiencesListResponse =
+  | Audience[]
+  | { audiences?: Audience[]; items?: Audience[] }
+  | ApiListResponse<Audience>

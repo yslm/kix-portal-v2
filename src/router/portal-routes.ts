@@ -9,6 +9,7 @@ const Builder = () => import('@/views/kix/Builder.vue')
 const Flows = () => import('@/views/kix/Flows.vue')
 const Reports = () => import('@/views/kix/Reports.vue')
 const CustomerList = () => import('@/views/kix/CustomerList.vue')
+const Audiences = () => import('@/views/kix/Audiences.vue')
 
 export interface PortalRouteMeta {
   title: string
@@ -114,7 +115,7 @@ export const portalRoutes: RouteRecordRaw[] = [
   {
     path: '/audiences',
     name: 'audiences',
-    component: Placeholder,
+    component: Audiences,
     meta: {
       title: 'Audiences',
       group: 'audience',
