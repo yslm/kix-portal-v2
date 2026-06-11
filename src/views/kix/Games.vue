@@ -32,6 +32,7 @@
   import { listBrandGames } from '@/api/portal-admin/games'
   import type { BrandGame } from '@/api/portal-admin/types'
   import { resolveBrandId } from '@/utils/kix/resolveBrandId'
+  import StatusBadge from '@/components/StatusBadge.vue'
 
   const { t } = useI18n()
 
@@ -121,17 +122,7 @@
       >
         <div class="flex items-center justify-between">
           <h3 class="font-semibold text-gray-900">{{ displayName(g) }}</h3>
-          <span
-            v-if="g.status"
-            class="text-xs px-2 py-0.5 rounded-full"
-            :class="{
-              'bg-green-50 text-green-700': g.status === 'active',
-              'bg-amber-50 text-amber-700': g.status === 'paused',
-              'bg-gray-50 text-gray-500': g.status === 'draft'
-            }"
-          >
-            {{ g.status }}
-          </span>
+          <StatusBadge v-if="g.status" :status="g.status" />
         </div>
         <p v-if="displaySlug(g)" class="text-xs text-gray-400 font-mono">{{ displaySlug(g) }}</p>
       </article>

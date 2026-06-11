@@ -24,6 +24,7 @@
   import { listCampaigns } from '@/api/portal-admin/campaigns'
   import type { Campaign } from '@/api/portal-admin/types'
   import { fmtSgd } from '@/utils/format/currency'
+  import StatusBadge from '@/components/StatusBadge.vue'
 
   const { t } = useI18n()
 
@@ -115,19 +116,7 @@
               data-testid="campaign-row"
             >
               <td class="px-4 py-2">
-                <span
-                  class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
-                  :class="
-                    c.status === 'active'
-                      ? 'bg-green-50 text-green-700'
-                      : c.status === 'paused'
-                        ? 'bg-yellow-50 text-yellow-700'
-                        : c.status === 'ended'
-                          ? 'bg-gray-100 text-gray-600'
-                          : 'bg-gray-50 text-gray-500'
-                  "
-                  >{{ c.status ?? '—' }}</span
-                >
+                <StatusBadge :status="c.status" />
               </td>
               <td class="px-4 py-2 font-medium text-gray-900">{{ c.name }}</td>
               <td class="px-4 py-2 text-gray-600">{{ c.objective ?? '—' }}</td>
