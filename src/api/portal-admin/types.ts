@@ -4,13 +4,49 @@ export interface ApiListResponse<T> {
   cursor?: string | null
 }
 
+// ---------------------------------------------------------------------------
+// Games view · My Games grid
+// ---------------------------------------------------------------------------
+//
+// Source: kix-platform/landing/portal.html · `kixLoadMyGames()` (~line 7434)
+// Endpoint: GET /api/v1/portal-admin/brand-games?brand=<brand_id>
+// Response shape: `{ games: BrandGame[] }` (legacy renderer reads
+// `(data && data.games) || []`). Defensive callers may also accept bare
+// arrays / `{ items }` wrappers.
+//
+// The legacy renderer (~line 7480) reads many name variants and falls back
+// across them: `name → brand_game_name → game_name → game_slug → 'Untitled'`.
+// Likewise the cover falls back from `cover_url` → server SVG; and the
+// "playable" check ORs across `game_file / unpacked_url / game_id /
+// game_slug / play_url`.
+//
+// Every field is optional except `id` (we generate a row key from it). The
+// per-game `status` flag mirrors the campaign status enum and is rendered
+// as a coloured badge when present.
+
 export interface BrandGame {
   id: string
-  brand: string
-  name: string
-  status?: 'active' | 'paused' | 'draft'
+  brand?: string
+  name?: string
+  // Legacy name fallbacks the renderer walks through, in order, before
+  // defaulting to "Untitled". Kept so the v2 renderer can match.
+  brand_game_name?: string
+  game_name?: string
+  game_slug?: string
+  game_id?: string
+  // Status badge (active / paused / draft) — optional.
+  status?: 'active' | 'paused' | 'draft' | string
+  // Per-game cover image set by sample_brander + Nano Banana brand cover.
+  // Empty / null is safe — view falls back to a generated placeholder.
+  cover_url?: string
+  // URL surfaces the legacy "▶ Play" button targets. Any of these flags
+  // the game as playable; the renderer picks the first non-empty one.
+  game_file?: string
+  unpacked_url?: string
+  play_url?: string
+  // Set by the gamification IDE when the merchant customises the build.
+  order_id?: string
   createdAt?: string
-  // Extend as schema is reverse-engineered from real responses.
 }
 
 // ---------------------------------------------------------------------------

@@ -4,6 +4,7 @@ const Placeholder = () => import('@/views/Placeholder.vue')
 const Overview = () => import('@/views/kix/Overview.vue')
 const Settings = () => import('@/views/kix/Settings.vue')
 const Campaigns = () => import('@/views/kix/Campaigns.vue')
+const Games = () => import('@/views/kix/Games.vue')
 
 export interface PortalRouteMeta {
   title: string
@@ -25,7 +26,7 @@ export const portalRoutes: RouteRecordRaw[] = [
   {
     path: '/games',
     name: 'games',
-    component: Placeholder,
+    component: Games,
     meta: { title: 'Games', group: 'main', legacyViewId: 'view-games' } satisfies PortalRouteMeta
   },
   {
