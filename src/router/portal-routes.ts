@@ -18,6 +18,7 @@ const VipTiers = () => import('@/views/kix/VipTiers.vue')
 const Storefront = () => import('@/views/kix/Storefront.vue')
 const Billing = () => import('@/views/kix/Billing.vue')
 const Geofences = () => import('@/views/kix/Geofences.vue')
+const Creatives = () => import('@/views/kix/Creatives.vue')
 
 export interface PortalRouteMeta {
   title: string
@@ -72,7 +73,7 @@ export const portalRoutes: RouteRecordRaw[] = [
   {
     path: '/creatives',
     name: 'creatives',
-    component: Placeholder,
+    component: Creatives,
     meta: {
       title: 'Creatives',
       group: 'marketing',

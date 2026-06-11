@@ -1269,3 +1269,125 @@ export type GeofencesListResponse =
       locations?: Location[]
       items?: Location[]
     }
+
+// ---------------------------------------------------------------------------
+// Creatives view · asset-library grid
+// ---------------------------------------------------------------------------
+//
+// Source: kix-platform/landing/portal.html · `<section id="view-creatives">`
+// (lines 1871-1907) + legacy fetcher `kixLoadCreatives()` (~line 6907)
+// plus its `_kixRenderCreativesRows()` row renderer (~line 6877-6905) and
+// the legacy fallback `_kixLoadCreativesLegacy()` (~line 6919-6940).
+//
+// Wire endpoints (settings-router — NOT under /portal-admin/):
+//
+//   GET /api/v1/portal/settings/creatives/<brand_id>/page
+//     ?page=<int>&page_size=<int>
+//     → { items: CreativeAsset[], total?, has_more? } — the canonical
+//       paginated endpoint the live view uses (T5.C N3 sweep).
+//
+//   GET /api/v1/portal/settings/creatives/<brand_id>
+//     → { items: CreativeAsset[] } — the simpler non-paginated endpoint
+//       the legacy fallback at portal.html line 6923 reads. Plan 5 T7
+//       ports against this one to keep the first cut honest (no
+//       pagination controls until that surface lands as a follow-up).
+//
+//   POST /api/v1/portal/settings/creatives/<brand_id>
+//     → registers a metadata-only record (filename / storage_url /
+//       mime_type / bytes / kind). Real S3 wiring goes via
+//       /api/v1/assets/upload (portal.html line 5785). DEFERRED.
+//
+// Brand id is in the URL path — same shape as fetchBrandProfile()
+// (settings-router pattern, NOT the JWT-inferred /portal-admin/ shape).
+// The legacy `_t44Bid()` helper at portal.html falls back to
+// `'demo_brand'` when `kix_brand_id` is unset in localStorage; we
+// mirror that default in `listCreatives(brandId?)` for parity.
+//
+// Per-asset fields read by the legacy renderer at portal.html line
+// 6893-6901 (every field is optional from a defensive-rendering POV —
+// the backend always emits filename+bytes+kind+uploaded_at for
+// real-data rows, but we treat the rest as nullable in case the
+// schema evolves):
+//
+//   - filename:      original upload filename (e.g. "logo.png");
+//                    rendered raw with `<>&"` escape pass in the
+//                    legacy renderer (line 6896). Row key seed.
+//   - kind:          'image' | 'video' — drives the kind subscript
+//                    on each card. Defaults to 'image' (line 6894).
+//   - bytes:         size in bytes — rendered as "N KB" via
+//                    `Math.round(c.bytes / 1024) + ' KB'` (line 6895).
+//                    Em-dash fallback when absent.
+//   - storage_url:   S3 / pending-upload URL (`/uploads/pending/...`
+//                    for metadata-only registrations). Not rendered
+//                    in the card grid — typed for the deferred edit /
+//                    preview surface.
+//   - mime_type:     full MIME (e.g. "image/png", "video/mp4"); also
+//                    not rendered in the grid first-cut.
+//   - uploaded_at:   either an ISO string OR a pre-formatted object
+//                    `{ formatted_display, iso8601 }` (settings-router
+//                    convention — see portal.html line 6898 read of
+//                    `c.uploaded_at?.formatted_display`). The v2
+//                    renderer prefers `.formatted_display` then falls
+//                    back to the raw string.
+//   - asset_id:      opaque asset id — present when the backend has
+//                    promoted the metadata record to a real S3 asset.
+//                    Used as the row key when available, else filename.
+//
+// Plan 5 T7 ports ONLY: page header + asset library grid (read-only).
+// DEFERRED (legacy still owns these surfaces):
+//   - "+ Upload asset" CTA + hidden `<input type="file">` + POST flow
+//     (`kixUploadCreatives()` at portal.html line 6844). Requires
+//     file-handling + per-file progress + the metadata-only fallback
+//     shim — outside the four-state read pattern.
+//   - Brand-kit hero card (primary logo + brand colours + typography
+//     placeholder) at portal.html line 1881-1903. Pure decoration in
+//     the legacy view — no data on the wire. Can be folded back in
+//     once the brand-profile editor surfaces logo_url / brand_color.
+//   - Per-card preview thumbnail (legacy renderer doesn't render one
+//     either — just emits a card with name/kind/size/date).
+//   - Per-card edit / delete actions — not in the legacy view either.
+//   - Brand-kit linking (the typography / colour tokens tying assets
+//     to the storefront profile — a future cross-surface integration).
+//   - Pagination controls (Prev/Next + page label) — would require
+//     porting `kixPaginate*` and bumping to the `/page` endpoint.
+
+export type CreativeKind = 'image' | 'video' | string
+
+/**
+ * Settings-router convention: timestamp fields are either a raw ISO
+ * string OR a pre-formatted wrapper `{ formatted_display, iso8601 }`.
+ * The legacy renderer reads `c.uploaded_at?.formatted_display` so
+ * the wrapper variant is the canonical shape; we accept both.
+ */
+export type SettingsTimestamp =
+  | string
+  | {
+      formatted_display?: string
+      iso8601?: string
+    }
+
+export interface CreativeAsset {
+  asset_id?: string
+  filename?: string
+  kind?: CreativeKind
+  bytes?: number
+  storage_url?: string
+  mime_type?: string | null
+  uploaded_at?: SettingsTimestamp
+}
+
+/**
+ * Backend canonical shape on the non-paginated read is `{ items }`
+ * (the legacy fallback at portal.html line 6924 reads `d.items || []`).
+ * Bare arrays + `{ creatives }` are tolerated for defensive parity
+ * with the rest of the portal-admin surface — the view normalises
+ * all three variants.
+ */
+export type CreativesListResponse =
+  | CreativeAsset[]
+  | {
+      items?: CreativeAsset[]
+      creatives?: CreativeAsset[]
+      total?: number
+      has_more?: boolean
+    }
