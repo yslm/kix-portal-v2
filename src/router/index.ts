@@ -4,6 +4,7 @@ import { staticRoutes } from './routes/staticRoutes'
 import { configureNProgress } from '@/utils/router'
 import { setupBeforeEachGuard } from './guards/beforeEach'
 import { setupAfterEachGuard } from './guards/afterEach'
+import { tokenGuard } from './guards/tokenGuard'
 
 // 创建路由实例
 export const router = createRouter({
@@ -14,6 +15,7 @@ export const router = createRouter({
 // 初始化路由
 export function initRouter(app: App<Element>): void {
   configureNProgress() // 顶部进度条
+  router.beforeEach(tokenGuard) // KiX token guard — ported from portal.html:27-42, must run first
   setupBeforeEachGuard(router) // 路由前置守卫
   setupAfterEachGuard(router) // 路由后置守卫
   app.use(router)
