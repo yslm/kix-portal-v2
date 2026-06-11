@@ -15,6 +15,7 @@ const Rules = () => import('@/views/kix/Rules.vue')
 const Templates = () => import('@/views/kix/Templates.vue')
 const Cases = () => import('@/views/kix/Cases.vue')
 const VipTiers = () => import('@/views/kix/VipTiers.vue')
+const Storefront = () => import('@/views/kix/Storefront.vue')
 
 export interface PortalRouteMeta {
   title: string
@@ -221,7 +222,7 @@ export const portalRoutes: RouteRecordRaw[] = [
   {
     path: '/storefront',
     name: 'storefront',
-    component: Placeholder,
+    component: Storefront,
     meta: {
       title: 'Storefront',
       group: 'loyalty',

@@ -906,3 +906,146 @@ export interface LoyaltyTierDistributionResponse {
   sampled_members: number
   distribution: LoyaltyTierDistribution[]
 }
+
+// ---------------------------------------------------------------------------
+// Storefront view · public-page preview + URL + embed snippet
+// ---------------------------------------------------------------------------
+//
+// Source: kix-platform/landing/portal.html · `<section id="view-storefront">`
+// (lines 2664-2710) + the helpers `kixStorefrontBrand()` /
+// `kixRenderStorefrontUrl()` / `kixCopyEmbedSnippet()` at
+// line 5368-5388. The legacy section bundles in one place:
+//
+//   - Page header + subtitle ("The public-facing brand page customers
+//     land on after scanning your in-store QR.") at portal.html line
+//     2666-2667
+//   - "Open public page ↗" CTA in the head — `window.open('/sf/' +
+//     brandId, '_blank')` against the brand's public storefront route
+//     (which 302-redirects to `/landing/storefront.html?b=<bid>` per
+//     app/main.py line 2040-2042).
+//   - Preview card (line 2671-2682) — a static "what your customers
+//     see" panel with a 96×96 avatar tile + display name + tagline +
+//     two CTAs ("Play to win" / "View rewards"). The legacy inline
+//     IIFE at line 2682-2693 hydrates the avatar letter + display
+//     name from `localStorage.kix_brand_name` / `kix_user_name` as a
+//     client-side defensive fill — but the real source of truth is
+//     the public storefront profile at
+//       GET /api/v1/storefront/{brand_id}
+//     which returns the configured `display_name`, `logo_url`,
+//     `brand_color`, `bio`, follower_count, avg_rating + rating_count.
+//     (See `get_storefront` at app/routers/storefront.py line 462-484.)
+//     When the merchant hasn't run "Configure storefront" yet, the
+//     server synthesises a default profile from `config:{bid}` (the
+//     same brand-config blob the rest of the portal reads). The
+//     `is_default: true` flag in the response signals "auto-generated,
+//     not yet customised" — we surface a small "Default profile"
+//     muted badge so the merchant knows the page is live but generic.
+//   - Public URL card (line 2700-2707) — `<code>` block showing
+//     `window.location.origin + '/sf/' + kixStorefrontBrand()` (the
+//     full canonical absolute URL the merchant copies into their QR
+//     code / website nav).
+//   - Embed snippet card (line 2708-2710) — a `<textarea>` with an
+//     `<iframe>` snippet pointing at `/landing/play.html?brand=<bid>
+//     &embed=1&channel=website`, plus a "Copy embed code" CTA that
+//     calls `kixCopyEmbedSnippet()` (clipboard write).
+//
+// Plan 5 T4 ports: page header + preview card (display_name + logo /
+// initial fallback + brand_color tile + bio) + Public URL block +
+// Embed snippet block (read-only textarea + Copy CTA). The preview
+// reads the REAL storefront profile, falling back to a brand-id-only
+// preview when the endpoint 404s (brand not provisioned for storefront
+// yet). DEFERRED (legacy still owns these surfaces):
+//   - Customization EDITOR — `POST /api/v1/storefront/{bid}/configure`
+//     form for display_name / bio / logo_url / brand_color / hero
+//     image / featured games / vouchers / socials / custom_sections.
+//     The endpoint exists (portal.py line 258-309) but requires file
+//     upload + a complex multi-section editor that exceeds the four-
+//     state read pattern this slice ports.
+//   - Follower / rating analytics — surface the `follower_count` and
+//     `avg_rating` numbers in a stats strip. The fields are typed
+//     here so a later slice can render them without re-shaping.
+//   - "Play to win" / "View rewards" preview CTAs — pure marketing
+//     decoration that targets the public page; can be folded back in
+//     once the public storefront preview is hosted inside an iframe.
+//   - The legacy localStorage avatar/name hydration IIFE (portal.html
+//     line 2682-2693) — superseded by the real GET /storefront/{bid}
+//     fetch in v2, which is server-authoritative.
+//
+// Wire response shape (from `get_storefront` at storefront.py line
+// 479-484 — the canonical `_load_profile` hash unpacked +
+// follower_count / avg_rating / rating_count appended):
+//
+//   {
+//     brand_id: string,
+//     display_name: string,          // configured or synthesized
+//     bio: string,                   // may be empty ""
+//     hero_image_url: string | null,
+//     logo_url: string | null,
+//     brand_color: string,           // hex, defaults to "#00FC00"
+//     contact: { email?, phone?, website?, address? },
+//     featured_games: string[],      // game slugs
+//     featured_vouchers: string[],   // voucher ids
+//     show_stores: boolean,
+//     socials: { instagram?, tiktok?, facebook? },
+//     custom_sections: Array<{ title, content_md }>,
+//     country: string | null,
+//     category: string | null,
+//     created_at: number,            // epoch seconds; 0 for synth
+//     updated_at: number,            // epoch seconds; 0 for synth
+//     public_url: string,            // canonical /landing/... path
+//     is_default?: boolean,          // true → auto-synthesised
+//     follower_count: number,
+//     avg_rating: number,            // 0.0–5.0
+//     rating_count: number
+//   }
+//
+// 404 path: `_load_profile()` returns None only when the brand has no
+// `config:{bid}` AND no `brand:{bid}:games` set — a "genuinely unknown
+// brand" — which is unreachable for any signed-in merchant. We still
+// handle the 404 defensively so the view renders a flat fallback
+// preview keyed on the brand id alone (matching the legacy IIFE's
+// "T" fallback letter).
+
+export interface StorefrontContact {
+  email?: string
+  phone?: string
+  website?: string
+  address?: string
+}
+
+export interface StorefrontSocials {
+  instagram?: string
+  tiktok?: string
+  facebook?: string
+}
+
+export interface StorefrontCustomSection {
+  title: string
+  content_md: string
+}
+
+export interface StorefrontProfile {
+  brand_id?: string
+  display_name?: string
+  bio?: string
+  hero_image_url?: string | null
+  logo_url?: string | null
+  brand_color?: string
+  contact?: StorefrontContact
+  featured_games?: string[]
+  featured_vouchers?: string[]
+  show_stores?: boolean
+  socials?: StorefrontSocials
+  custom_sections?: StorefrontCustomSection[]
+  country?: string | null
+  category?: string | null
+  created_at?: number
+  updated_at?: number
+  public_url?: string
+  is_default?: boolean
+  follower_count?: number
+  avg_rating?: number
+  rating_count?: number
+}
+
+export type StorefrontResponse = StorefrontProfile
