@@ -23,6 +23,7 @@
   import type { LiveCampaignCard } from '@/api/portal-admin/types'
   import { fmtSgd } from '@/utils/format/currency'
   import { resolveBrandId } from '@/utils/kix/resolveBrandId'
+  import SetupGuideCard from './overview/SetupGuideCard.vue'
 
   const { t } = useI18n()
 
@@ -56,6 +57,9 @@
       <h1 class="text-2xl font-bold">{{ pageTitle }}</h1>
       <p class="text-sm text-gray-500 mt-1">{{ pageSubtitle }}</p>
     </header>
+
+    <!-- Shopify-style onboarding checklist (auto-hides when complete) -->
+    <SetupGuideCard />
 
     <!-- Live campaigns grid -->
     <section class="space-y-3">

@@ -1451,3 +1451,93 @@ export type RewardTemplatesResponse =
  * Templates → Game links → Issuance → Redemption.
  */
 export type RewardsTabId = 'templates' | 'game-links' | 'issuance' | 'redemption'
+
+// ---------------------------------------------------------------------------
+// Overview view · setup-guide card (Shopify-style onboarding checklist)
+// ---------------------------------------------------------------------------
+//
+// Source: kix-platform/landing/portal.html · `#setup-guide-card` (line 1324)
+// + the legacy fetcher `kixLoadSetupGuide()` (~line 4199) + the step metadata
+// constant `KIX_SETUP_STEPS` (~line 4150).
+//
+// Wire endpoint:
+//   GET /api/v1/portal-admin/setup-guide
+//     → {
+//         brand_id: string,
+//         steps:    SetupStep[],   // canonical step rows
+//         done:     number,        // count of step.done === true
+//         total:    number,        // steps.length (currently fixed at 6)
+//         complete: boolean,       // done === total
+//         source:   string         // human-readable freshness blurb
+//       }
+//
+// Brand is inferred from the JWT (`get_current_brand` dependency at
+// portal_admin.py line 3619-3621). There is NO `?brand=` / `?brand_id=`
+// query parameter — same pattern as listCustomers() / listAudiences() /
+// listRules(). The implementation reads six independent Redis keys (game
+// orders set, prizes zset, locations hash + minted QR scan, recent_plays
+// list, win flag, redeemed_vouchers zset) so the checklist survives a
+// browser refresh or device switch — the legacy comment at line 3625-3637
+// calls this out explicitly ("V2.14 ③ — server-side real signals").
+//
+// Per-step wire fields (portal_admin.py line 3666-3678):
+//   - key:    canonical step identifier
+//             'build_game' → first game created
+//             'set_prize' → first prize configured (auto-generates vouchers)
+//             'add_store_qr' → at least one location + at least one minted QR
+//             'first_player' → at least one /game/end play recorded
+//             'first_win' → at least one play with won=true
+//             'first_redemption' → at least one voucher redeemed at counter
+//   - done:   boolean · derived from the live Redis read
+//   - count:  optional integer · how many of the underlying entity exist
+//             (e.g. games=4, prizes=2). Not rendered in the legacy card —
+//             typed here so a later slice can show "(N games)" subtext.
+//   - view:   legacy view-id the CTA jumped to via `kixSwitchView()`.
+//             Maps onto v2 route paths: 'games'→'/games',
+//             'prizes'→'/prizes' (Placeholder), 'geofences'→'/geofences',
+//             'overview'→'/overview', 'vouchers'→'/vouchers' (Placeholder).
+//
+// Label + icon are NOT on the wire — the legacy renderer resolves them
+// client-side from `KIX_SETUP_STEPS[s.key]` and i18next. The v2 component
+// owns the same static lookup table (English-first; i18n hook-up is a
+// follow-up slice).
+//
+// Deferred from this first cut:
+//   - Step icons (the legacy renderer emits inline SVG per step) — the v2
+//     card uses a simple checkmark / circle glyph for the done / not-done
+//     states, matching the four-state pattern used elsewhere.
+//   - i18n keys (the legacy `KIX_SETUP_STEPS[k].key` namespace
+//     `portal.setup.step.<key>`) — labels are hard-coded English in v2 T1.
+//   - Per-step `count` subtext (e.g. "(4 games · 2 prizes)") — typed but
+//     unused.
+
+export type SetupStepKey =
+  | 'build_game'
+  | 'set_prize'
+  | 'add_store_qr'
+  | 'first_player'
+  | 'first_win'
+  | 'first_redemption'
+  | string
+
+/**
+ * Legacy view-id strings emitted by the backend in `step.view`. Maps to
+ * v2 router paths inside the SetupGuideCard component.
+ */
+export type SetupStepView = 'games' | 'prizes' | 'geofences' | 'overview' | 'vouchers' | string
+
+export interface SetupStep {
+  key: SetupStepKey
+  done: boolean
+  view?: SetupStepView
+  count?: number
+}
+
+export interface SetupGuideResponse {
+  brand_id?: string
+  steps: SetupStep[]
+  done: number
+  total: number
+  complete: boolean
+  source?: string
+}

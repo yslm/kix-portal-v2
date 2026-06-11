@@ -1,5 +1,5 @@
 import { http } from './http'
-import type { LiveCardsResponse } from './types'
+import type { LiveCardsResponse, SetupGuideResponse } from './types'
 
 /**
  * Portal admin · Overview view API.
@@ -25,3 +25,24 @@ export const fetchLiveCards = (brandId?: string) =>
   http.get<LiveCardsResponse>('/api/v1/portal/builder/live-cards', {
     params: { brand_id: brandId || 'demo_brand' }
   })
+
+/**
+ * GET /api/v1/portal-admin/setup-guide
+ *
+ * Powers the Shopify-style setup checklist card on the Overview view
+ * (`#setup-guide-card` in the legacy portal.html, line 1324). Brand is
+ * inferred server-side from the JWT (`get_current_brand` dependency) —
+ * no `?brand=` / `?brand_id=` query parameter. Same pattern as
+ * `listCustomers()` / `listAudiences()` / `listRules()`.
+ *
+ * Response (`SetupGuideResponse`):
+ *   { brand_id, steps: SetupStep[], done, total, complete, source }
+ *
+ * Each step row: `{ key, done, view?, count? }` — see SetupStep typedef
+ * for the canonical step keys and their underlying Redis signals
+ * (portal_admin.py · `setup_guide()` at line 3618-3687).
+ *
+ * Reference legacy fetcher: `kixLoadSetupGuide()` at portal.html line 4199.
+ */
+export const fetchSetupGuide = () =>
+  http.get<SetupGuideResponse>('/api/v1/portal-admin/setup-guide')
