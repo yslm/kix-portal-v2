@@ -224,3 +224,55 @@ export interface OpportunityScoreRequest {
   safety?: Record<string, unknown>
   audience?: Record<string, unknown>
 }
+
+// ---------------------------------------------------------------------------
+// Flows view · my-flows gallery
+// ---------------------------------------------------------------------------
+//
+// Source: kix-platform/landing/portal.html · `kixLoadFlows()` (~line 8750)
+// Endpoint: GET /api/v1/portal-admin/flows?brand=<brand_id>
+//   (constant `KIX_FLOWS_API = '/api/v1/portal-admin/flows'` at line 8588)
+// Response shape: `{ flows: AutomationFlow[] }` — the legacy renderer reads
+// `(data && data.flows) || []`. We also accept bare arrays and the generic
+// `{ items: [...] }` wrapper defensively, same pattern as Campaigns/Games.
+//
+// Wave4 W4-C · B36: merchant-facing label for the artifact is "Campaign",
+// but the internal data model term remains "flow" — see the explanatory
+// comment at portal.html line 1532-1536. We keep the wire field names
+// (`flow_id`, `template_id`) unchanged.
+//
+// Fields read by the legacy card renderer (~line 8770):
+//   - flow_id:     opaque id (unique row key + click target)
+//   - name:        display title
+//   - status:      pill class — the legacy CSS has `.status-pill.{status}`
+//                  variants; common values are 'draft' / 'active' / 'paused'
+//                  / 'ended'. Free-form string.
+//   - start_date:  ISO date or pre-formatted string, rendered raw
+//   - end_date:    ISO date or pre-formatted string, rendered raw
+//   - steps_count: integer, shown as "N steps"
+//   - template_id: starter campaign id (e.g. 'ramadan_30d', 'referral_v1');
+//                  falls back to literal string "custom" when absent.
+//
+// Every field except `flow_id` is optional from a defensive-rendering POV.
+
+export type FlowStatus = 'draft' | 'active' | 'paused' | 'ended' | string
+
+export interface AutomationFlow {
+  flow_id: string
+  name?: string
+  status?: FlowStatus
+  start_date?: string
+  end_date?: string
+  steps_count?: number
+  template_id?: string
+}
+
+/**
+ * Backend canonical shape is `{ flows }` (matches the legacy renderer's
+ * `(data && data.flows) || []` read). Bare arrays + `{ items }` are
+ * tolerated for defensive parity with Campaigns/Games.
+ */
+export type FlowsListResponse =
+  | { flows?: AutomationFlow[]; items?: AutomationFlow[] }
+  | AutomationFlow[]
+  | ApiListResponse<AutomationFlow>
