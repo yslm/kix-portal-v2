@@ -1,5 +1,43 @@
 {
   "portal_v2": {
     "smoke": "Portal v2 smoke marker — if you see this, vue-i18n loaded portal/en.json"
+  },
+  "menus": {
+    "overview": "Overview",
+    "games_group": "Games",
+    "games": "My Games",
+    "builder": "Builder",
+    "flows": "Flows",
+    "marketing": "Marketing",
+    "campaigns": "Campaigns",
+    "creatives": "Creatives",
+    "templates": "Templates",
+    "cases": "Cases",
+    "primitives": "Primitives",
+    "messages": "Messages",
+    "audience": "Audience",
+    "audiences": "Audiences",
+    "customer_list": "Customers",
+    "cohort": "Cohort",
+    "rules": "Rules",
+    "abtests": "A/B Tests",
+    "loyalty": "Loyalty",
+    "coupons_qr": "Coupons / QR",
+    "vouchers": "Vouchers",
+    "prizes": "Prizes",
+    "game_rewards": "Game Rewards",
+    "vip_tiers": "VIP Tiers",
+    "storefront": "Storefront",
+    "finance": "Finance",
+    "billing": "Billing",
+    "invoices": "Invoices",
+    "analytics": "Analytics",
+    "reports": "Reports",
+    "attribution": "Attribution",
+    "pixel": "Pixel",
+    "geofences": "Geofences",
+    "system": "System",
+    "operations": "Operations",
+    "settings": "Settings"
   }
 }

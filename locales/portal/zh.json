@@ -1,5 +1,43 @@
 {
   "portal_v2": {
     "smoke": "Portal v2 自检标记 — 你看到这条说明 vue-i18n 加载了 portal/zh.json"
+  },
+  "menus": {
+    "overview": "总览",
+    "games_group": "游戏",
+    "games": "我的游戏",
+    "builder": "构建器",
+    "flows": "流程",
+    "marketing": "营销",
+    "campaigns": "活动",
+    "creatives": "素材",
+    "templates": "模板",
+    "cases": "案例",
+    "primitives": "原型",
+    "messages": "消息",
+    "audience": "受众",
+    "audiences": "受众分群",
+    "customer_list": "客户列表",
+    "cohort": "队列分析",
+    "rules": "规则",
+    "abtests": "A/B 测试",
+    "loyalty": "忠诚度",
+    "coupons_qr": "优惠券 / 二维码",
+    "vouchers": "代金券",
+    "prizes": "奖品",
+    "game_rewards": "游戏奖励",
+    "vip_tiers": "VIP 等级",
+    "storefront": "店面",
+    "finance": "财务",
+    "billing": "账单",
+    "invoices": "发票",
+    "analytics": "分析",
+    "reports": "报表",
+    "attribution": "归因",
+    "pixel": "像素追踪",
+    "geofences": "地理围栏",
+    "system": "系统",
+    "operations": "运营",
+    "settings": "设置"
   }
 }
