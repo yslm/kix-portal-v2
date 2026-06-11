@@ -644,3 +644,87 @@ export type RulesListResponse =
       updated_at?: string
       empty_state_hint?: string | null
     }
+
+// ---------------------------------------------------------------------------
+// Templates view · template-catalog grid
+// ---------------------------------------------------------------------------
+//
+// Source: kix-platform/landing/portal.html · `<section id="view-templates">`
+// (lines 1753-1777) + legacy fetcher `kixLoadTemplates()` (~line 8235) +
+// renderer `_kixRenderTemplates()` (~line 8177).
+//
+// Wire endpoint:
+//   GET /api/v1/portal-admin/games/templates
+//     ?limit=<int>&offset=<int>&reskin_only=<bool>
+//
+// `KIX_STUDIO_API` is hard-coded to `/api/v1/portal-admin/games` at
+// portal.html line 3833, so the templates list hangs off the games router
+// (not a dedicated `/portal-admin/templates` route). Brand identity is
+// inferred from the JWT — no explicit `?brand=` param, mirroring the
+// listCustomers() / listAudiences() / listAbTests() / listRules() pattern.
+//
+// Backend response wrapper (legacy renderer line 8246-8252):
+//   {
+//     games?: Template[],         // canonical key on this endpoint
+//     items?: Template[],         // generic-list fallback
+//     total?: number,             // full catalog count (drives "Load more")
+//     reskin_count?: number,      // games ready for one-click reskin
+//     catalog_only_count?: number,// games visible but not yet buildable
+//   }
+// The renderer reads `data.games || data.items || (Array.isArray(data) ?
+// data : [])`, so bare arrays are also tolerated.
+//
+// Per-template fields read by the legacy renderer (every one optional
+// except `slug`, which is the row key and the SVG-cover fallback seed):
+//   - slug:        opaque template id (e.g. "scratch_v1", "wheel_spin")
+//   - name:        display title; falls back to slug then "Template"
+//   - cover_url:   server-rendered preview image; absent → SVG fallback
+//                  generated client-side by `kixCoverFallback(slug, name)`.
+//                  Plan 5 T1 omits the SVG fallback — empty cover renders
+//                  as a plain placeholder block. The legacy Nano-Banana
+//                  cover hydration (`kixHydrateCovers`) is DEFERRED.
+//   - reskinable:  bool · server hint that one-click brand reskin is
+//                  ready. Mirrored by `_kixIsReskinable()` against an
+//                  in-portal cache of slugs (`/reskin-slugs` endpoint).
+//                  Plan 5 T1 surfaces this as a "Ready" badge when true;
+//                  the full reskin-slug cross-check is DEFERRED.
+//
+// Plan 5 T1 ports ONLY the page header + a single-page catalog grid.
+// DEFERRED (legacy still owns these surfaces):
+//   - Filter chips: "Ready to generate" / "Browse full catalog"
+//     (`kixSetTemplateFilter()` + `_kixTplReskinOnly` flag)
+//   - Sort dropdown: popular_vertical / highest_roi / best_for_new /
+//     trending (`kixApplyTemplateSort()` at portal.html line 1766)
+//   - Per-card rank badge (#1 / #2 / #3 / 🔥 Trending) + community
+//     ranking signals (`_kixSeedSignals()`)
+//   - Per-card star ratings + peer-count line + ROI signal
+//   - Detail panel (`kixOpenGameDetail()`) opened on card click
+//   - "Try demo" iframe modal (`kixOpenDemo()`)
+//   - "Load more" pagination button + offset accumulator
+//   - "Coming soon" / catalog-only badge gating
+//   - SVG cover fallback + Nano-Banana cover hydration
+//   - i18n filter chip counts ("(N)" suffixes)
+
+export interface Template {
+  slug: string
+  name?: string
+  cover_url?: string
+  reskinable?: boolean
+}
+
+/**
+ * Backend canonical shape is `{ games }` (the legacy renderer's first
+ * read at portal.html line 8246). Bare arrays + `{ items }` are
+ * tolerated for defensive parity with Campaigns / Audiences / Flows.
+ * The counts (`total`, `reskin_count`, `catalog_only_count`) are typed
+ * but unused by the Plan 5 T1 first-cut view.
+ */
+export type TemplatesListResponse =
+  | Template[]
+  | {
+      games?: Template[]
+      items?: Template[]
+      total?: number
+      reskin_count?: number
+      catalog_only_count?: number
+    }
