@@ -1,0 +1,5 @@
+{
+  "portal_v2": {
+    "smoke": "Portal v2 smoke marker — if you see this, vue-i18n loaded portal/en.json"
+  }
+}

@@ -9,3 +9,6 @@ dist-ssr
 src/types/import/auto-imports.d.ts
 src/types/import/components.d.ts
 .auto-import.json
+
+# i18n synced from kix-platform SSOT — regenerate via `pnpm sync:locales`
+locales/synced/

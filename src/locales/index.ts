@@ -17,6 +17,19 @@
  * - zh: 简体中文
  * - en: English
  *
+ * ## 语言文件来源 (Plan 1 Task 3)
+ *
+ * Messages are merged from two layers (portal layer wins on key collision):
+ *  - synced: `@locales/synced/<ssot-locale>/*.json` — mirrored 1:1 from
+ *    kix-platform SSOT via `pnpm sync:locales`. Per-locale directory of
+ *    flat-dotted-key namespace files (auth.json, portal.json, ...).
+ *  - portal: `@locales/portal/{en,zh}.json` — portal-v2-specific keys
+ *    (menus.*, etc., expanded in Task 8).
+ *
+ * SSOT uses locale codes `en-US` and `zh-Hans`; the portal currently exposes
+ * just `en` / `zh` to the rest of the app — adapt here if more languages
+ * need wiring.
+ *
  * @module locales
  * @author Art Design Pro Team
  */
@@ -27,9 +40,74 @@ import { LanguageEnum } from '@/enums/appEnum'
 import { getSystemStorage } from '@/utils/storage'
 import { StorageKeyManager } from '@/utils/storage/storage-key-manager'
 
-// 同步导入语言文件
-import enMessages from './langs/en.json'
-import zhMessages from './langs/zh.json'
+// ---------------------------------------------------------------------------
+// Locale message loading
+// ---------------------------------------------------------------------------
+// Each SSOT locale dir contains many namespace JSON files. We eager-glob the
+// two locales we wire in Plan 1 (en-US ⇒ en, zh-Hans ⇒ zh) and shallow-merge
+// the namespace objects into a single flat-dotted-key map per locale. Then we
+// deep-merge the portal-v2 override layer on top.
+
+type AnyObj = Record<string, any>
+
+const syncedEnModules = import.meta.glob('@locales/synced/en-US/*.json', {
+  eager: true,
+  import: 'default'
+}) as Record<string, AnyObj>
+
+const syncedZhModules = import.meta.glob('@locales/synced/zh-Hans/*.json', {
+  eager: true,
+  import: 'default'
+}) as Record<string, AnyObj>
+
+import portalEn from '@locales/portal/en.json'
+import portalZh from '@locales/portal/zh.json'
+
+/** Skip namespace files that are not user-facing translations. */
+function isWiredNamespace(path: string): boolean {
+  // `_translation_status.json` is metadata, not translations.
+  return !/\/_/.test(path)
+}
+
+/** Shallow-merge all namespace files within a locale dir into one object. */
+function mergeNamespaces(modules: Record<string, AnyObj>): AnyObj {
+  const out: AnyObj = {}
+  for (const [path, mod] of Object.entries(modules)) {
+    if (!isWiredNamespace(path)) continue
+    Object.assign(out, mod)
+  }
+  return out
+}
+
+/** Deep-merge: `over` wins on key collisions; nested plain objects are merged. */
+function deepMerge<T extends AnyObj>(base: T, over: T): T {
+  const out: AnyObj = { ...base }
+  for (const k of Object.keys(over)) {
+    if (
+      over[k] &&
+      typeof over[k] === 'object' &&
+      !Array.isArray(over[k]) &&
+      base[k] &&
+      typeof base[k] === 'object' &&
+      !Array.isArray(base[k])
+    ) {
+      out[k] = deepMerge(base[k], over[k])
+    } else {
+      out[k] = over[k]
+    }
+  }
+  return out as T
+}
+
+const syncedEn = mergeNamespaces(syncedEnModules)
+const syncedZh = mergeNamespaces(syncedZhModules)
+
+const enMessages = deepMerge(syncedEn, portalEn as AnyObj)
+const zhMessages = deepMerge(syncedZh, portalZh as AnyObj)
+
+// ---------------------------------------------------------------------------
+// 存储键 / 默认语言 (unchanged from art-design-pro)
+// ---------------------------------------------------------------------------
 
 /**
  * 存储键管理器实例

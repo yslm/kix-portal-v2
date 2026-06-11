@@ -38,6 +38,7 @@ export default ({ mode }: { mode: string }) => {
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
+        '@locales': resolvePath('./locales'),
         '@views': resolvePath('src/views'),
         '@imgs': resolvePath('src/assets/images'),
         '@icons': resolvePath('src/assets/icons'),
