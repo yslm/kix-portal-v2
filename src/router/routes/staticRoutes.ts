@@ -1,4 +1,5 @@
 import { AppRouteRecordRaw } from '@/utils/router'
+import { portalRoutes } from '../portal-routes'
 
 /**
  * 静态路由配置（不需要权限就能访问的路由）
@@ -11,13 +12,18 @@ import { AppRouteRecordRaw } from '@/utils/router'
  * 2、静态路由不管是否登录都可以访问
  */
 export const staticRoutes: AppRouteRecordRaw[] = [
-  // 不需要登录就能访问的路由示例
-  // {
-  //   path: '/welcome',
-  //   name: 'WelcomeStatic',
-  //   component: () => import('@views/dashboard/console/index.vue'),
-  //   meta: { title: 'menus.dashboard.title' }
-  // },
+  // KiX portal — 29 view routes mounted under admin layout (Plan 1 Task 7).
+  // Real implementations land in Plans 2-4; for now everything renders Placeholder.vue.
+  // Mounted as a static route so they survive Task 8's menu rewrite.
+  // Child paths use leading `/` (absolute) but still render via the layout's
+  // <router-view>, which gives every KiX page sidebar + topbar chrome.
+  {
+    path: '/portal',
+    name: 'PortalLayout',
+    component: () => import('@views/index/index.vue'),
+    meta: { title: 'KiX Portal', isHideTab: true },
+    children: portalRoutes as AppRouteRecordRaw[]
+  },
   {
     path: '/auth/login',
     name: 'Login',
