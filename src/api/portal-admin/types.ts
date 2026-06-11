@@ -560,3 +560,87 @@ export type AbTestsListResponse =
       campaign_count?: number
       empty_state_hint?: string | null
     }
+
+// ---------------------------------------------------------------------------
+// Rules / Automations view · rule list
+// ---------------------------------------------------------------------------
+//
+// Source: kix-platform/landing/portal.html · `<section id="view-rules">`
+// (lines 1933-1955) + legacy fetcher `kixLoadRules()` (~line 7185).
+//
+// The legacy page is called "Automations" in the rendered title but the
+// underlying view-id / route name is still "rules" (see portal.html line
+// 1933 `id="view-rules"` and line 1936 `<h1>Automations</h1>`). The wire
+// endpoint also lives under `/automations` —
+// `GET /api/v1/portal-admin/automations` — brand inferred from the JWT
+// (no explicit `?brand=` param, same pattern as listCustomers() /
+// listAudiences() / listAbTests()).
+//
+// Wire response (legacy renderer line 7191-7232) is a wrapper:
+//   {
+//     items: Rule[],                    // canonical rows
+//     source: string,                   // e.g. 'redis · automations:<bid>'
+//     updated_at: ISO timestamp,
+//     freshness?: 'real-time',
+//     empty_state_hint?: string | null  // gated copy for empty state
+//   }
+//
+// Each rule row carries the fields the legacy renderer reads (every one
+// optional from a defensive-rendering POV except `id` — the FastAPI route
+// always emits id+name+state+action for both demo + real data, but we
+// treat the rest as nullable in case the schema evolves):
+//
+//   - id:                  opaque rule id (row key)
+//   - name:                display title (e.g. "Pause low-CTR campaigns")
+//   - state:               'on' | 'off' | 'notify_only' — drives the
+//                          legacy state badge ("On" green / "Off" gray /
+//                          "Notify only" gray). v2 maps onto StatusBadge:
+//                          'on' → active, 'off' → inactive, 'notify_only'
+//                          → falls through to gray pill (no mapping, safe
+//                          default).
+//   - condition:           free-form condition summary (e.g.
+//                          "spend > S$50 AND CTR < 0.5%")
+//   - action:              'pause' | 'scale' | 'notify' — drives the
+//                          per-row Action badge in the legacy renderer.
+//   - scope:               free-form scope label ("All campaigns",
+//                          "Voucher pools", "Account", …)
+//   - last_triggered_at:   ISO timestamp string or pre-formatted "Xh ago"
+//                          string. Em-dash placeholder when absent.
+//
+// Plan 4 T6 ports ONLY the page header + rules list table. DEFERRED:
+//   - Per-row On / Off / Notify only toggle buttons + the PATCH
+//     `/api/v1/portal-admin/automations/<id>/state` fetcher (`kixToggleAutomation()` at line 7238)
+//   - "+ Create rule" CTA — legacy redirects to the Flows view
+//   - Audit log button — opens `kixOpenAuditLog()` modal
+//   - Dry-run endpoint (`POST /api/v1/portal-admin/rules/dry-run` at
+//     portal.html line 10495) used by the rule builder preview pane
+
+export type RuleState = 'on' | 'off' | 'notify_only' | string
+export type RuleAction = 'pause' | 'scale' | 'notify' | string
+
+export interface Rule {
+  id: string
+  name?: string
+  state?: RuleState
+  condition?: string
+  action?: RuleAction
+  scope?: string
+  last_triggered_at?: string | null
+}
+
+/**
+ * Backend canonical shape is the `{ items, source, updated_at, ... }`
+ * wrapper. We also accept bare arrays and `{ rules }` / `{ automations }`
+ * wrappers defensively, mirroring the Campaigns / Audiences / AbTests
+ * pattern — the view normalises all variants.
+ */
+export type RulesListResponse =
+  | Rule[]
+  | {
+      items?: Rule[]
+      rules?: Rule[]
+      automations?: Rule[]
+      source?: string
+      updated_at?: string
+      empty_state_hint?: string | null
+    }
