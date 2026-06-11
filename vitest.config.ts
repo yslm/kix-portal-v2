@@ -5,7 +5,11 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [vue()],
-  test: { environment: 'jsdom', globals: false },
+  test: {
+    environment: 'jsdom',
+    globals: false,
+    exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**']
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
