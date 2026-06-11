@@ -50,3 +50,37 @@ export interface LiveCampaignCard {
 export interface LiveCardsResponse {
   cards: LiveCampaignCard[]
 }
+
+// ---------------------------------------------------------------------------
+// Settings view · brand profile sub-section
+// ---------------------------------------------------------------------------
+//
+// Source: kix-platform/landing/portal.html · `kixLoadProfile()` (~line 5937)
+// Endpoint: GET /api/v1/portal/settings/profile/<brand_id>
+// Response shape: `{ profile: BrandProfile }`
+//
+// All fields except brand_name may be missing/empty for a brand that hasn't
+// been fully onboarded — the legacy renderer treats every field as optional
+// and defaults to '' when absent.
+//
+// `business_type` is one of: 'company' | 'individual' | 'non_profit' |
+// 'government' — see the <select id="prof-business-type"> options in the
+// legacy HTML.
+
+export type BusinessType = 'company' | 'individual' | 'non_profit' | 'government'
+
+export interface BrandProfile {
+  brand_name?: string
+  business_type?: BusinessType | string
+  contact_email?: string
+  contact_phone?: string
+  tax_id?: string
+  country?: string
+  website_url?: string
+  city?: string
+  logo_url?: string
+}
+
+export interface BrandProfileResponse {
+  profile: BrandProfile
+}

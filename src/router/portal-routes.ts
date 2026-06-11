@@ -2,6 +2,7 @@ import type { RouteRecordRaw } from 'vue-router'
 
 const Placeholder = () => import('@/views/Placeholder.vue')
 const Overview = () => import('@/views/kix/Overview.vue')
+const Settings = () => import('@/views/kix/Settings.vue')
 
 export interface PortalRouteMeta {
   title: string
@@ -291,7 +292,7 @@ export const portalRoutes: RouteRecordRaw[] = [
   {
     path: '/settings',
     name: 'settings',
-    component: Placeholder,
+    component: Settings,
     meta: {
       title: 'Settings',
       group: 'system',
