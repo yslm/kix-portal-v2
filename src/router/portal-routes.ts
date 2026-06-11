@@ -16,6 +16,7 @@ const Templates = () => import('@/views/kix/Templates.vue')
 const Cases = () => import('@/views/kix/Cases.vue')
 const VipTiers = () => import('@/views/kix/VipTiers.vue')
 const Storefront = () => import('@/views/kix/Storefront.vue')
+const Billing = () => import('@/views/kix/Billing.vue')
 
 export interface PortalRouteMeta {
   title: string
@@ -248,7 +249,7 @@ export const portalRoutes: RouteRecordRaw[] = [
   {
     path: '/billing',
     name: 'billing',
-    component: Placeholder,
+    component: Billing,
     meta: {
       title: 'Billing',
       group: 'finance',
@@ -256,6 +257,11 @@ export const portalRoutes: RouteRecordRaw[] = [
     } satisfies PortalRouteMeta
   },
   {
+    // Per Plan 5 T5 audit, /invoices is a DUPLICATE of the invoices
+    // card already rendered inside /billing. The sidebar entry was
+    // already dropped in Plan 5 T0; we keep the route as Placeholder
+    // so any stale /invoices deep links still resolve (a later slice
+    // can redirect to /billing#invoices once anchor-routing lands).
     path: '/invoices',
     name: 'invoices',
     component: Placeholder,

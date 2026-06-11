@@ -1049,3 +1049,120 @@ export interface StorefrontProfile {
 }
 
 export type StorefrontResponse = StorefrontProfile
+
+// ---------------------------------------------------------------------------
+// Billing view · wallet summary + invoices table
+// ---------------------------------------------------------------------------
+//
+// Source: kix-platform/landing/portal.html · `<section id="view-billing">`
+// (lines 2586-2643) + the legacy fetcher `kixLoadBilling()` (~line 5267).
+//
+// Per the Plan 5 T5 audit, `<section id="view-invoices">` (lines
+// 2645-2661) is a DUPLICATE of the invoices card already rendered
+// inside `view-billing`. The dedicated /invoices route hits the
+// settings-router endpoint (`/api/v1/portal/settings/billing/<bid>`)
+// which returns the same logical rows in cents-based fields, but the
+// merchant-facing surface is identical (a list of date/number/total
+// /status with a PDF link). We CONSOLIDATE: one Billing.vue absorbs
+// both — wallet card on top + invoices table below. The /invoices
+// router stays as Placeholder (the sidebar entry was already dropped
+// in Plan 5 T0).
+//
+// Wire endpoint (the primary one — gives wallet AND invoices in one
+// round-trip, matching the legacy view-billing fetch):
+//
+//   GET /api/v1/portal-admin/billing
+//     → {
+//         balance_str?:     string,   // pre-formatted "S$1,234.56"
+//         burn7_str?:       string,   // pre-formatted "S$345"
+//         burn_daily_str?:  string,   // pre-formatted "S$49"
+//         days_runway?:     number,   // integer, no formatting
+//         invoices?:        Invoice[] | null,
+//         per_brand?:       BrandSpend[] | null,
+//       }
+//
+// Brand inferred from the JWT via `get_current_brand` — no `?brand=`
+// param, same pattern as listCustomers() / listAudiences() / …
+//
+// Field semantics (from the legacy renderer line 5273-5295):
+//
+//   - balance_str:     wallet credit balance, pre-formatted with the
+//                      "S$" prefix server-side. The v2 view prefers
+//                      the raw `balance_sgd` number (when emitted) so
+//                      `fmtSgd()` can render it consistently with the
+//                      rest of the portal; falls back to the legacy
+//                      pre-formatted string otherwise.
+//   - burn7_str:       SGD spent over the trailing 7 days. Same
+//                      raw/pre-formatted treatment as balance.
+//   - burn_daily_str:  daily burn-rate average. Subscript on the
+//                      burn-7d card ("≈ S$49/day" in the legacy
+//                      template).
+//   - days_runway:     integer · days of runway at current burn. The
+//                      legacy renderer writes this raw with no
+//                      separator / unit (the "days" label is the
+//                      static card heading "Days runway").
+//
+// Each invoice row carries the fields the legacy renderer reads at
+// portal.html line 5284-5285 (every one optional except a stable row
+// key — we prefer `number` then `id`):
+//
+//   - date:        ISO date or pre-formatted "Mar 10, 2025"
+//   - number:      invoice number (e.g. "INV-2025-0312")
+//   - amount_str:  pre-formatted total ("S$129.00"); v2 prefers a raw
+//                  `total_sgd` / `total_cents` when emitted.
+//   - status:      'paid' | 'open' | 'void' | … — drives the
+//                  StatusBadge mapping. Legacy defaults to "Paid"
+//                  when absent (line 5285), we surface the raw value.
+//   - pdf_url:     downloadable PDF link (anchor target in the
+//                  legacy renderer).
+//
+// Per-brand spend rows (the bottom card of the legacy view) are
+// DEFERRED — the consolidated view ports ONLY the page header +
+// wallet summary + invoices table. The `per_brand` field is typed
+// here so a later slice can render it without re-shaping. Likewise
+// payment-method management, recharge / top-up CTAs, billing-history
+// filters, and the "Export CSV" button are all deferred. The wallet
+// auto-recharge pill is deferred too (it's tied to the deferred
+// payment-method editor).
+
+export interface WalletBalance {
+  balance_str?: string
+  balance_sgd?: number
+  burn7_str?: string
+  burn7_sgd?: number
+  burn_daily_str?: string
+  burn_daily_sgd?: number
+  days_runway?: number
+}
+
+export interface Invoice {
+  id?: string
+  number?: string
+  date?: string
+  amount_str?: string
+  total_sgd?: number
+  total_cents?: number
+  status?: string
+  pdf_url?: string
+}
+
+export interface BillingBrandSpend {
+  brand: string
+  spend7_str?: string
+  spend30_str?: string
+  spend7_sgd?: number
+  spend30_sgd?: number
+}
+
+/**
+ * Backend canonical shape is the merged wallet + invoices payload the
+ * legacy `kixLoadBilling()` reads at portal.html line 5267-5299.
+ * Every field is optional — the legacy renderer treats a missing
+ * `invoices` array as "no invoices yet" (V2.16 sweep fix at line
+ * 5278-5282 made that explicit) and leaves placeholders for absent
+ * wallet numbers.
+ */
+export interface BillingResponse extends WalletBalance {
+  invoices?: Invoice[] | null
+  per_brand?: BillingBrandSpend[] | null
+}
