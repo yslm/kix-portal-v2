@@ -346,3 +346,56 @@ export interface OwnerReportSummary {
   // champions + loyal + at_risk per legacy aggregator (line 3990-3992).
   returningPlayers: number | null
 }
+
+// ---------------------------------------------------------------------------
+// CustomerList view · verified-customers table
+// ---------------------------------------------------------------------------
+//
+// Source: kix-platform/landing/portal.html · `kixLoadCustomers()` (~line 7303)
+// Endpoint: GET /api/v1/portal-admin/customers
+// Response shape: `{ customers: Customer[] }` — the legacy renderer reads
+// `(d && d.customers) || []`. We also accept bare arrays / `{ items }`
+// defensively, mirroring the Campaigns / Games / Flows pattern.
+//
+// Note: the live view in portal.html actually invokes the PAGINATED variant
+// `kixLoadCustomersPaged()` against `/customers/page` with page/page_size/
+// search query params. Plan 4 T3 ports ONLY the simpler `/customers` GET —
+// pagination, search debounce, the prev/next page buttons, the RFM-segment
+// per-row badge derivation (legacy `_seg()` at line 5118-5124), and the
+// "Export CSV" CTA (`kixExportCustomersCsv()` at line 7320) are DEFERRED to
+// later Plan 4 sub-tasks. The simple endpoint is real and returns the same
+// row schema, so the read-only first cut is honest and not invented.
+//
+// Fields read by the legacy table row renderer (~line 7313):
+//   - name / handle:     display name (fallback chain: `name ?? handle`)
+//   - channel:           verification channel (e.g. "phone", "email") —
+//                        rendered as a small badge; '—' when absent
+//   - first_seen:        ISO date or pre-formatted string, rendered raw
+//   - plays:             total game plays (integer); default 0
+//   - redeems:           total voucher redemptions (integer); default 0
+//   - last_active:       ISO date or pre-formatted string, '—' fallback
+//
+// Every field except a stable row key is optional from a defensive-rendering
+// POV — the legacy view literally does `${c.name||c.handle}` so we use the
+// same fallback. Row key prefers `id` then `handle` then array index.
+
+export interface Customer {
+  id?: string
+  name?: string
+  handle?: string
+  channel?: string
+  first_seen?: string
+  plays?: number
+  redeems?: number
+  last_active?: string
+}
+
+/**
+ * Backend canonical shape is `{ customers }` (matches the legacy renderer's
+ * `(d && d.customers) || []` read at portal.html line 7311). Bare arrays
+ * and `{ items }` wrappers are tolerated for defensive parity.
+ */
+export type CustomersListResponse =
+  | { customers?: Customer[]; items?: Customer[] }
+  | Customer[]
+  | ApiListResponse<Customer>
