@@ -14,6 +14,7 @@ const AbTests = () => import('@/views/kix/AbTests.vue')
 const Rules = () => import('@/views/kix/Rules.vue')
 const Templates = () => import('@/views/kix/Templates.vue')
 const Cases = () => import('@/views/kix/Cases.vue')
+const VipTiers = () => import('@/views/kix/VipTiers.vue')
 
 export interface PortalRouteMeta {
   title: string
@@ -210,7 +211,7 @@ export const portalRoutes: RouteRecordRaw[] = [
   {
     path: '/vip-tiers',
     name: 'vip-tiers',
-    component: Placeholder,
+    component: VipTiers,
     meta: {
       title: 'VIP Tiers',
       group: 'loyalty',

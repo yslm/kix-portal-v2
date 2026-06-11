@@ -825,3 +825,84 @@ export type CasesListResponse =
       prospects?: CaseStudy[]
       items?: CaseStudy[]
     }
+
+// ---------------------------------------------------------------------------
+// VipTiers view · tier ladder + member distribution
+// ---------------------------------------------------------------------------
+//
+// Source: kix-platform/landing/portal.html · `<section id="view-vip-tiers">`
+// (lines 2394-2412) + legacy fetcher `kixLoadVipTiers()` (~line 4087) +
+// row renderer `kixAddVipTier()` (~line 4119) + save handler
+// `kixSaveVipTiers()` (~line 4127).
+//
+// Two wire endpoints, fetched in parallel by `Promise.all` in the legacy
+// loader (portal.html line 4089-4090):
+//
+//   GET /api/v1/portal-admin/loyalty-tiers
+//     → { brand_id, tiers: LoyaltyTier[], custom: bool }
+//        (FastAPI handler portal_admin.py line 3531-3550)
+//
+//   GET /api/v1/portal-admin/loyalty-tiers/distribution
+//     → { brand_id, sampled_members, distribution: LoyaltyTierDistribution[] }
+//        (FastAPI handler portal_admin.py line 3575-3612)
+//
+// Brand inferred from the JWT via `get_current_brand` dependency — no
+// explicit `?brand=` param, same pattern as listCustomers() /
+// listAudiences() / listRules() / listAbTests() / listTemplates().
+//
+// Per-tier schema (LoyaltyTiersBody pydantic model + the inline dict
+// shape returned by both endpoints):
+//   - name:   display title (e.g. "Bronze" / "Silver" / "Gold").
+//             Server-validated unique-when-lower-cased on PUT.
+//   - min_xp: integer · XP floor for the tier. The PUT handler sorts
+//             tiers by min_xp and rejects the body if the lowest tier
+//             doesn't start at 0 (every member must fall into a tier).
+//   - perk:   free-form perk description (e.g. "Welcome reward on
+//             first visit" / "VIP-only vouchers · birthday double").
+//
+// Distribution rows extend each tier with a `members` count from real
+// player XP. The legacy renderer reads `dist.distribution.map(d =>
+// d.members)` and graphs each tier as a horizontal bar normalised to
+// the max-bucket count (portal.html line 4099-4106). `sampled_members`
+// is the cap-500 sample size shown as a small subscript line.
+//
+// Plan 5 T3 ports ONLY: page header + read-only tier ladder card +
+// read-only distribution card. DEFERRED (legacy still owns these):
+//   - Tier rule EDITOR — per-row name/min_xp/perk inputs + "+ Add tier"
+//     CTA + "Save tiers" PUT button (`kixAddVipTier()` /
+//     `kixSaveVipTiers()` at portal.html line 4119 / 4127). Requires
+//     form-state management + 422 error surfacing (lowest min_xp=0,
+//     unique names) that goes beyond the four-state read pattern.
+//   - The "✕" remove-row button on each editor row.
+//   - Toast / inline status pill after a save round-trip
+//     (`#vip-tier-status` at portal.html line 2403).
+//   - Live re-bucket after save (`kixLoadVipTiers()` is invoked at the
+//     tail of `kixSaveVipTiers()` to refresh the distribution graph).
+
+export interface LoyaltyTier {
+  name: string
+  min_xp: number
+  perk: string
+}
+
+export interface LoyaltyTiersResponse {
+  brand_id?: string
+  tiers: LoyaltyTier[]
+  custom?: boolean
+}
+
+/**
+ * Distribution rows extend the tier schema with a `members` count from
+ * real player XP. Backend always emits name/min_xp/perk/members for
+ * every tier (even tiers with zero members), so the view doesn't need
+ * to fill in missing rows from the base config.
+ */
+export interface LoyaltyTierDistribution extends LoyaltyTier {
+  members: number
+}
+
+export interface LoyaltyTierDistributionResponse {
+  brand_id?: string
+  sampled_members: number
+  distribution: LoyaltyTierDistribution[]
+}
