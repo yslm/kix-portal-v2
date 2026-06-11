@@ -33,7 +33,7 @@ describe('tokenGuard', () => {
     expect(next).toHaveBeenCalledWith()
   })
 
-  it('passes anonymous when ?brand= is in query (demo mode)', () => {
+  it('passes anonymous when ?brand= is in to.query (demo mode, hash-internal)', () => {
     const next = vi.fn()
     tokenGuard(
       { fullPath: '/overview?brand=demo', query: { brand: 'demo' } } as any,
@@ -41,5 +41,17 @@ describe('tokenGuard', () => {
       next
     )
     expect(next).toHaveBeenCalledWith()
+  })
+
+  it('passes anonymous when ?brand= is in location.search (hash-external, mirrors legacy portal.html)', () => {
+    Object.defineProperty(window, 'location', {
+      writable: true,
+      value: { pathname: '/portal/', search: '?brand=demo', hash: '', replace: vi.fn() }
+    })
+    const next = vi.fn()
+    // to.query is empty because vue-router hash mode doesn't parse pre-hash search
+    tokenGuard({ fullPath: '/overview', query: {} } as any, {} as any, next)
+    expect(next).toHaveBeenCalledWith()
+    expect(window.location.replace as any).not.toHaveBeenCalled()
   })
 })
