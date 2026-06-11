@@ -19,6 +19,7 @@ const Storefront = () => import('@/views/kix/Storefront.vue')
 const Billing = () => import('@/views/kix/Billing.vue')
 const Geofences = () => import('@/views/kix/Geofences.vue')
 const Creatives = () => import('@/views/kix/Creatives.vue')
+const Rewards = () => import('@/views/kix/Rewards.vue')
 
 export interface PortalRouteMeta {
   title: string
@@ -234,13 +235,15 @@ export const portalRoutes: RouteRecordRaw[] = [
   },
   {
     // Consolidated rewards view — merges prizes / game-rewards / vouchers /
-    // coupons-qr (deferred sidebar entries). Real implementation lands in
-    // Plan 5 T8; the synthetic `legacyViewId` doesn't map to any single
-    // legacy `<section id="view-*">` because no such consolidated view
-    // existed in portal.html — this is a new aggregator.
+    // coupons-qr (deferred sidebar entries). Real implementation landed
+    // in Plan 5 T8 with the Templates tab fully implemented and Game
+    // links / Issuance / Redemption shipped as stubs. The synthetic
+    // `legacyViewId` doesn't map to any single legacy
+    // `<section id="view-*">` because no such consolidated view existed
+    // in portal.html — this is a new aggregator.
     path: '/rewards',
     name: 'rewards',
-    component: Placeholder,
+    component: Rewards,
     meta: {
       title: 'Rewards',
       group: 'loyalty',

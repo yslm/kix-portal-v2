@@ -1391,3 +1391,63 @@ export type CreativesListResponse =
       total?: number
       has_more?: boolean
     }
+
+/**
+ * Rewards (consolidated view) — Plan 5 T8.
+ *
+ * Replaces four overlapping legacy sections (view-coupons-qr,
+ * view-vouchers, view-prizes, view-game-rewards) per the Plan 5
+ * audit. Templates tab fetches the merchant's reward / coupon /
+ * prize template catalog from `/api/v1/prizes?brand_id=<bid>`
+ * (legacy `kixLoadPrizes()` at portal.html line 5721-5751). The
+ * legacy fetcher reads `(d && d.prizes) || []` off the response —
+ * canonical shape is `{ prizes: RewardTemplate[] }`. Bare arrays
+ * + `{ items, templates }` are tolerated for defensive parity
+ * with the rest of the portal-admin surface.
+ *
+ * Per-row fields mirror the legacy renderer at portal.html line
+ * 5733-5746:
+ *   - `prize_id` — canonical identifier (`<code>` in the legacy DOM)
+ *   - `name` — display title (escaped via `_kixEsc`)
+ *   - `image_url` — optional cover thumb (44x44 trophy fallback)
+ *   - `inventory_count` — numeric or null (null → 'unlimited')
+ *   - `original_price_cents` — integer cents, formatted by
+ *     `_kixMoney()` (SGD); v2 divides by 100 before `fmtSgd`
+ *   - `offer_type` — 'free' | 'percent_off' | 'fixed_price'
+ *     (legacy `_kixOfferLabel()` derives the human label)
+ *   - `expires_on` — optional ISO date; legacy
+ *     `kixCQTemplateExpired()` checks for "past today"
+ *
+ * The view also surfaces a `status` field for the StatusBadge pill
+ * even though the legacy renderer derives status from `expired`
+ * inline — keeps the v2 surface consistent with VipTiers / Cases /
+ * Geofences. Backends that don't emit `status` yet fall through to
+ * the badge's gray default.
+ */
+export interface RewardTemplate {
+  prize_id?: string
+  id?: string
+  name: string
+  type?: 'voucher' | 'prize' | 'cashback' | string
+  offer_type?: 'free' | 'percent_off' | 'fixed_price' | string
+  image_url?: string
+  inventory_count?: number | null
+  original_price_cents?: number | null
+  expires_on?: string | null
+  status?: string
+}
+
+export type RewardTemplatesResponse =
+  | RewardTemplate[]
+  | {
+      prizes?: RewardTemplate[]
+      templates?: RewardTemplate[]
+      items?: RewardTemplate[]
+    }
+
+/**
+ * Tab id for the consolidated rewards view. Tab order mirrors the
+ * legacy `view-coupons-qr` button bar at portal.html line 2492-2497:
+ * Templates → Game links → Issuance → Redemption.
+ */
+export type RewardsTabId = 'templates' | 'game-links' | 'issuance' | 'redemption'
