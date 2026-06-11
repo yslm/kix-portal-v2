@@ -3,6 +3,7 @@ import type { RouteRecordRaw } from 'vue-router'
 const Placeholder = () => import('@/views/Placeholder.vue')
 const Overview = () => import('@/views/kix/Overview.vue')
 const Settings = () => import('@/views/kix/Settings.vue')
+const Campaigns = () => import('@/views/kix/Campaigns.vue')
 
 export interface PortalRouteMeta {
   title: string
@@ -47,7 +48,7 @@ export const portalRoutes: RouteRecordRaw[] = [
   {
     path: '/campaigns',
     name: 'campaigns',
-    component: Placeholder,
+    component: Campaigns,
     meta: {
       title: 'Campaigns',
       group: 'marketing',

@@ -84,3 +84,60 @@ export interface BrandProfile {
 export interface BrandProfileResponse {
   profile: BrandProfile
 }
+
+// ---------------------------------------------------------------------------
+// Campaigns view · list table
+// ---------------------------------------------------------------------------
+//
+// Source: kix-platform/landing/portal.html · `kixLoadCampaignsList()`
+// (~line 5321). Endpoint: GET /api/v1/portal-admin/campaigns.
+//
+// Response shape: BARE ARRAY `Campaign[]` (the FastAPI route declares
+// `response_model=list[Campaign]`). The legacy renderer also handles
+// `{ campaigns: [...] }` and `{ items: [...] }` defensively — same here.
+// Comment in legacy code (line 5329-5332) confirms the "Marathon fix" for
+// this: reading `.campaigns` always returned undefined on a bare array.
+//
+// Fields read by the legacy table renderer (every one optional):
+//  - id:            opaque campaign id
+//  - name:          display title
+//  - status:        'active' | 'paused' | 'pending' | 'ended' | 'draft' …
+//                   (legacy filter tabs are: all / active / paused / pending
+//                   / ended — but the server may emit other strings)
+//  - objective:     e.g. "Awareness", "Acquisition" — free-form string
+//  - budget_str:    pre-formatted budget, e.g. "S$1,200"
+//  - spend_str:     pre-formatted spend, e.g. "S$345"
+//  - budget_sgd / spend_sgd: raw numbers (preferred — we format with fmtSgd)
+//  - impressions:   integer
+//  - ctr_pct:       click-through rate %, may be number or pre-formatted str
+//  - conversions:   integer
+//  - cpa_str:       pre-formatted cost-per-acquisition string
+//
+// We accept BOTH pre-formatted (`*_str`) and raw numeric shapes. View prefers
+// raw numbers + `fmtSgd()` when present, falling back to the pre-formatted
+// string from the backend.
+
+export type CampaignStatus = 'active' | 'paused' | 'pending' | 'ended' | 'draft' | string
+
+export interface Campaign {
+  id: string
+  name: string
+  status?: CampaignStatus
+  objective?: string
+  budget_sgd?: number
+  spend_sgd?: number
+  budget_str?: string
+  spend_str?: string
+  impressions?: number
+  ctr_pct?: number | string
+  conversions?: number
+  cpa_str?: string
+  startsAt?: string
+  endsAt?: string
+}
+
+/**
+ * Backend may return a bare array OR a wrapper object. The view normalises
+ * to `Campaign[]` regardless.
+ */
+export type CampaignsListResponse = Campaign[] | { campaigns?: Campaign[]; items?: Campaign[] }
