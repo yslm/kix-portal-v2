@@ -64,8 +64,9 @@ const axiosInstance = axios.create({
 /** 请求拦截器 */
 axiosInstance.interceptors.request.use(
   (request: InternalAxiosRequestConfig) => {
-    const { accessToken } = useUserStore()
-    if (accessToken) request.headers.set('Authorization', accessToken)
+    // KiX token injection: read directly from localStorage (managed by signin.html lifecycle)
+    const token = localStorage.getItem('kix_token') || localStorage.getItem('kix_portal_token')
+    if (token) request.headers.set('Authorization', `Bearer ${token}`)
 
     if (request.data && !(request.data instanceof FormData) && !request.headers['Content-Type']) {
       request.headers.set('Content-Type', 'application/json')
@@ -126,7 +127,13 @@ function resetUnauthorizedError() {
 /** 退出登录函数 */
 function logOut() {
   setTimeout(() => {
+    // Clear art-design-pro's own user state for hygiene
     useUserStore().logOut()
+    // Redirect to KiX signin (absolute URL; bypasses SPA router) with next=<current>
+    const nextUrl = encodeURIComponent(
+      window.location.pathname + window.location.search + window.location.hash
+    )
+    window.location.replace('/landing/signin.html?next=' + nextUrl)
   }, LOGOUT_DELAY)
 }
 
