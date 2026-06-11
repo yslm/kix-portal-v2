@@ -177,3 +177,50 @@ export interface Campaign {
  * to `Campaign[]` regardless.
  */
 export type CampaignsListResponse = Campaign[] | { campaigns?: Campaign[]; items?: Campaign[] }
+
+// ---------------------------------------------------------------------------
+// Builder view · opportunity-score card
+// ---------------------------------------------------------------------------
+//
+// Source: kix-platform/landing/portal.html · `_refreshOpportunityScore()`
+// (~line 10039). Endpoint: POST /api/v1/portal/builder/opportunity-score.
+//
+// Note the endpoint is NOT under `/portal-admin/` — it lives on the
+// public-merchant `/portal/builder/` namespace. The legacy code POSTs a
+// composite config object built from the current Game / Voucher / Rule /
+// Schedule / Safety / Audience module state. Plan 3 only ports the entry
+// view — sub-forms come in future tasks — so the v2 caller sends a minimal
+// empty config (`{ game:{}, voucher:{}, rule:{}, schedule:{}, safety:{},
+// audience:{ type: 'recent_visitors_7d' } }`) until those sub-forms land
+// and can contribute real state.
+//
+// Response shape (legacy renderer line 10065-10072):
+//  - score:  number 0-100 (rule-engine output)
+//  - hints:  Array of `{ points, label }` improvement suggestions. Empty
+//            array means "Looking good · no improvement suggestions" per
+//            the legacy "good" branch.
+
+export interface OpportunityScoreHint {
+  points: number
+  label: string
+}
+
+export interface OpportunityScore {
+  score: number
+  hints: OpportunityScoreHint[]
+}
+
+/**
+ * Request body the legacy code posts. Every section is optional — when
+ * the merchant hasn't configured a module yet, the server runs the
+ * rule-engine against whatever's available. Plan 3 sends an "empty
+ * baseline" object; sub-form tasks will populate each section.
+ */
+export interface OpportunityScoreRequest {
+  game?: Record<string, unknown>
+  voucher?: Record<string, unknown>
+  rule?: Record<string, unknown>
+  schedule?: Record<string, unknown>
+  safety?: Record<string, unknown>
+  audience?: Record<string, unknown>
+}

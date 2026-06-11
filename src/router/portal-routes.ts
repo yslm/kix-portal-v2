@@ -5,6 +5,7 @@ const Overview = () => import('@/views/kix/Overview.vue')
 const Settings = () => import('@/views/kix/Settings.vue')
 const Campaigns = () => import('@/views/kix/Campaigns.vue')
 const Games = () => import('@/views/kix/Games.vue')
+const Builder = () => import('@/views/kix/Builder.vue')
 
 export interface PortalRouteMeta {
   title: string
@@ -32,7 +33,7 @@ export const portalRoutes: RouteRecordRaw[] = [
   {
     path: '/builder',
     name: 'builder',
-    component: Placeholder,
+    component: Builder,
     meta: {
       title: 'Builder',
       group: 'main',
