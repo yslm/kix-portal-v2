@@ -19,7 +19,9 @@
     "commit": "git-cz",
     "clean:dev": "tsx scripts/clean-dev.ts",
     "sync:locales": "bash scripts/sync-locales.sh",
-    "test": "vitest"
+    "test": "vitest",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui"
   },
   "config": {
     "commitizen": {
@@ -85,6 +87,7 @@
     "@commitlint/cli": "^19.4.1",
     "@commitlint/config-conventional": "^19.4.1",
     "@eslint/js": "^9.9.1",
+    "@playwright/test": "^1.60.0",
     "@types/node": "^24.0.5",
     "@typescript-eslint/eslint-plugin": "^8.3.0",
     "@typescript-eslint/parser": "^8.3.0",

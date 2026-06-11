@@ -13,3 +13,8 @@ src/types/import/components.d.ts
 
 # i18n synced from kix-platform SSOT — regenerate via `pnpm sync:locales`
 locales/synced/
+
+# Playwright artifacts
+e2e/test-results/
+playwright-report/
+test-results/
