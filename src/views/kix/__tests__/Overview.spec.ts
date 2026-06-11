@@ -52,8 +52,10 @@ describe('Overview.vue · live-cards section', () => {
     expect(wrapper.text()).toContain('47')
     expect(wrapper.text()).toContain('31')
     expect(wrapper.text()).toContain('12')
-    expect(wrapper.text()).toContain('S$28.50')
-    expect(wrapper.text()).toContain('S$200.00')
+    // fmtSgd (extracted to src/utils/format/currency) trims trailing zeros and
+    // uses thousands separators — see Plan 3 Task 1.
+    expect(wrapper.text()).toContain('S$28.5')
+    expect(wrapper.text()).toContain('S$200')
     expect(wrapper.find('[data-testid="live-cards-grid"]').exists()).toBe(true)
   })
 

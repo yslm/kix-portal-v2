@@ -21,6 +21,8 @@
   import { useI18n } from 'vue-i18n'
   import { fetchLiveCards } from '@/api/portal-admin/overview'
   import type { LiveCampaignCard } from '@/api/portal-admin/types'
+  import { fmtSgd } from '@/utils/format/currency'
+  import { resolveBrandId } from '@/utils/kix/resolveBrandId'
 
   const { t } = useI18n()
 
@@ -30,27 +32,6 @@
 
   const pageTitle = computed(() => t('portal.overview.title'))
   const pageSubtitle = computed(() => t('portal.overview.subtitle'))
-
-  /** Format SGD money like the legacy `kixFmtMoney` helper. */
-  function fmtSgd(n: number): string {
-    if (typeof n !== 'number' || Number.isNaN(n)) return 'S$0.00'
-    return 'S$' + n.toFixed(2)
-  }
-
-  /**
-   * Read the brand id the same way the legacy `_bid()` helper did, but allow
-   * the standard `?brand=` URL param to override (useful for sales demos &
-   * the upcoming brand-switcher).
-   */
-  function resolveBrandId(): string {
-    try {
-      const fromQuery = new URLSearchParams(window.location.search).get('brand')
-      if (fromQuery) return fromQuery
-      return localStorage.getItem('kix_brand_id') || 'demo_brand'
-    } catch {
-      return 'demo_brand'
-    }
-  }
 
   async function load() {
     loading.value = true
