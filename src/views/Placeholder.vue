@@ -16,9 +16,9 @@
     apiState.value = { loading: true }
     try {
       const brand = new URLSearchParams(window.location.search).get('brand') ?? 'demo'
-      // http.get<T> returns unwrapped payload directly (see api/portal-admin/games.ts).
-      const payload = await listBrandGames(brand)
-      apiState.value = { loading: false, ok: true, payload }
+      // kixHttp returns AxiosResponse<T> — raw JSON lives in res.data (no envelope unwrap).
+      const res = await listBrandGames(brand)
+      apiState.value = { loading: false, ok: true, payload: res.data }
     } catch (e: any) {
       apiState.value = { loading: false, ok: false, error: e?.message ?? String(e) }
     }

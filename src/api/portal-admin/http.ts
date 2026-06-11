@@ -1,5 +1,6 @@
 /**
- * Thin re-export of art-design-pro's axios instance so KiX code
- * imports from a stable path even if upstream vendor file moves.
+ * Stable import path for KiX API calls.
+ * Backed by `kixHttp` — a dedicated axios instance that returns raw JSON
+ * (no art-design-pro BaseResponse envelope unwrapping). See `src/utils/http/kixHttp.ts`.
  */
-export { default as http } from '@/utils/http'
+export { kixHttp as http } from '@/utils/http/kixHttp'
