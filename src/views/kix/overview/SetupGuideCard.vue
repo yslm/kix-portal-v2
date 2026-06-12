@@ -26,10 +26,16 @@
    *   - i18n keys (legacy uses `portal.setup.step.<key>`)
    *   - Per-step `count` subtext
    */
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, onMounted } from 'vue'
   import { useRouter } from 'vue-router'
   import { fetchSetupGuide } from '@/api/portal-admin/overview'
-  import type { SetupStep, SetupStepKey, SetupStepView } from '@/api/portal-admin/types'
+  import type {
+    SetupGuideResponse,
+    SetupStep,
+    SetupStepKey,
+    SetupStepView
+  } from '@/api/portal-admin/types'
+  import { useNonCriticalCard } from '@/hooks/kix/useNonCriticalCard'
 
   /**
    * English labels for the six canonical step keys. Pulled verbatim from
@@ -63,12 +69,35 @@
   }
 
   const router = useRouter()
-  const loading = ref(true)
-  const error = ref<string | null>(null)
-  const steps = ref<SetupStep[]>([])
-  const completeFlag = ref(false)
-  const totalWire = ref<number | null>(null)
-  const doneWire = ref<number | null>(null)
+
+  const { data, visible, reload } = useNonCriticalCard<SetupGuideResponse>(
+    () => fetchSetupGuide(),
+    {
+      /** Card only shows when at least one step exists AND the checklist
+       * isn't already complete — mirrors the original visibility gate:
+       *   `steps.length > 0 && !allDone`
+       * where allDone = completeFlag || (total > 0 && done === total). */
+      isReady: (d) => {
+        const steps = d.steps ?? []
+        const total = typeof d.total === 'number' ? d.total : steps.length
+        const done = typeof d.done === 'number' ? d.done : steps.filter((s) => s.done).length
+        const allDone = !!d.complete || (total > 0 && done === total)
+        return steps.length > 0 && !allDone
+      }
+    }
+  )
+
+  onMounted(reload)
+
+  /** Derived from the resolved payload — mirrors the original standalone refs:
+   *  steps / doneWire / totalWire / completeFlag */
+  const steps = computed<SetupStep[]>(() => data.value?.steps ?? [])
+  const doneWire = computed<number | null>(() =>
+    typeof data.value?.done === 'number' ? data.value.done : null
+  )
+  const totalWire = computed<number | null>(() =>
+    typeof data.value?.total === 'number' ? data.value.total : null
+  )
 
   /** Prefer the wire's `done` / `total` (server canonical); fall through to
    * a local recount of `steps` so the card stays honest if the backend ever
@@ -77,9 +106,6 @@
   const total = computed(() => totalWire.value ?? steps.value.length)
   const progressPct = computed(() =>
     total.value > 0 ? Math.round((completed.value / total.value) * 100) : 0
-  )
-  const allDone = computed(
-    () => completeFlag.value || (total.value > 0 && completed.value === total.value)
   )
 
   /** Mirror the legacy `KIX_SETUP_STEPS[s.key] || {en: s.key}` fallback so an
@@ -98,34 +124,6 @@
     const route = routeFor(step.view)
     if (route) router.push(route)
   }
-
-  async function load() {
-    loading.value = true
-    error.value = null
-    try {
-      const res = await fetchSetupGuide()
-      const payload = res.data
-      steps.value = payload?.steps ?? []
-      doneWire.value = typeof payload?.done === 'number' ? payload.done : null
-      totalWire.value = typeof payload?.total === 'number' ? payload.total : null
-      completeFlag.value = !!payload?.complete
-    } catch (e: unknown) {
-      // Non-critical card — swallow the error and render nothing, matching
-      // the legacy `catch (_) { /* additive */ }` at portal.html line 4222.
-      error.value = e instanceof Error ? e.message : String(e)
-    } finally {
-      loading.value = false
-    }
-  }
-
-  onMounted(load)
-
-  /** Single truth-gate for visibility: the card only shows when we have
-   * fetched data, the fetch didn't error, at least one step exists, and the
-   * checklist isn't already complete. */
-  const visible = computed(
-    () => !loading.value && !error.value && steps.value.length > 0 && !allDone.value
-  )
 </script>
 
 <template>

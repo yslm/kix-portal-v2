@@ -34,10 +34,15 @@
    *     string itself — we keep them verbatim in NBA_COPY, so they show
    *     up as plain text in front of each body line).
    */
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, onMounted } from 'vue'
   import { useRouter } from 'vue-router'
   import { fetchNextBestAction } from '@/api/portal-admin/overview'
-  import type { NextBestAction, NextBestActionView } from '@/api/portal-admin/types'
+  import type {
+    NextBestAction,
+    NextBestActionResponse,
+    NextBestActionView
+  } from '@/api/portal-admin/types'
+  import { useNonCriticalCard } from '@/hooks/kix/useNonCriticalCard'
 
   /**
    * English copy table for the seven canonical action ids. Pulled verbatim
@@ -103,9 +108,31 @@
   }
 
   const router = useRouter()
-  const loading = ref(true)
-  const error = ref<string | null>(null)
-  const actions = ref<NextBestAction[]>([])
+
+  /** Known-ids only — drop any action whose id we don't have copy for.
+   * Mirrors the legacy `actions.filter(a => KIX_NBA_COPY[a.id])` at
+   * portal.html line 4183. */
+  function isKnownId(a: NextBestAction): boolean {
+    return Object.prototype.hasOwnProperty.call(NBA_COPY, a.id)
+  }
+
+  const { data, visible, reload } = useNonCriticalCard<NextBestActionResponse>(
+    () => fetchNextBestAction(),
+    {
+      /** Card only shows when at least one action survives the known-id filter —
+       *  mirrors legacy `actions.filter(a => KIX_NBA_COPY[a.id])` at
+       *  portal.html line 4183 and the `knownActions.value.length > 0` gate. */
+      isReady: (d) => (d.actions ?? []).filter(isKnownId).length > 0
+    }
+  )
+
+  onMounted(reload)
+
+  /** Derived from the resolved payload — mirrors the original `knownActions`
+   * computed but sourced from `data.value` instead of a standalone `actions` ref. */
+  const knownActions = computed<NextBestAction[]>(() =>
+    (data.value?.actions ?? []).filter(isKnownId)
+  )
 
   /** Interpolate `{token}` placeholders in the copy template with values
    * from the action row. Matches the legacy template-string fallback at
@@ -150,37 +177,6 @@
     const route = routeFor(action.view) ?? '/overview'
     router.push(route)
   }
-
-  /** Known-ids only — drop any action whose id we don't have copy for.
-   * Mirrors the legacy `actions.filter(a => KIX_NBA_COPY[a.id])` at
-   * portal.html line 4183. */
-  const knownActions = computed<NextBestAction[]>(() =>
-    actions.value.filter((a) => Object.prototype.hasOwnProperty.call(NBA_COPY, a.id))
-  )
-
-  async function load() {
-    loading.value = true
-    error.value = null
-    try {
-      const res = await fetchNextBestAction()
-      const payload = res.data
-      actions.value = payload?.actions ?? []
-    } catch (e: unknown) {
-      // Non-critical card — swallow the error and render nothing, matching
-      // the legacy `catch (_) { card.style.display = 'none' }` at
-      // portal.html line 4196.
-      error.value = e instanceof Error ? e.message : String(e)
-    } finally {
-      loading.value = false
-    }
-  }
-
-  onMounted(load)
-
-  /** Single truth-gate for visibility: the card only shows when we have
-   * fetched data, the fetch didn't error, and at least one action survives
-   * the known-id filter. */
-  const visible = computed(() => !loading.value && !error.value && knownActions.value.length > 0)
 
   /** Stable row key — id may repeat in theory if the backend ever
    * de-duplicates loosely, so pair it with the array index. */

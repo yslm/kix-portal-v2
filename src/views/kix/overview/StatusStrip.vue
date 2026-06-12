@@ -20,35 +20,15 @@
    *   - "↻ Refresh" button (live-refresh ticker)
    *   - i18n keys — English-only first cut, same approach as SetupGuideCard / NbaCard
    */
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, onMounted } from 'vue'
   import { fetchOverview } from '@/api/portal-admin/overview'
   import type { OverviewResponse } from '@/api/portal-admin/types'
   import { fmtSgd } from '@/utils/format/currency'
+  import { useNonCriticalCard } from '@/hooks/kix/useNonCriticalCard'
 
-  const loading = ref(true)
-  const error = ref<string | null>(null)
-  const data = ref<OverviewResponse | null>(null)
+  const { data, visible, reload } = useNonCriticalCard<OverviewResponse>(() => fetchOverview())
 
-  async function load() {
-    loading.value = true
-    error.value = null
-    try {
-      const res = await fetchOverview()
-      data.value = res.data ?? null
-    } catch (e: unknown) {
-      // Non-critical card — swallow the error and render nothing, matching
-      // the NbaCard / legacy `catch (_) { card.style.display = 'none' }` pattern
-      // at portal.html line 4196.
-      error.value = e instanceof Error ? e.message : String(e)
-    } finally {
-      loading.value = false
-    }
-  }
-
-  onMounted(load)
-
-  /** Single truth-gate for visibility: only show when data loaded without error. */
-  const visible = computed(() => !loading.value && !error.value && data.value !== null)
+  onMounted(reload)
 
   /** Formatted wallet value. fmtSgd takes dollars (not cents) — wallet_sgd is
    *  already in dollars per the API contract, so pass directly. */
