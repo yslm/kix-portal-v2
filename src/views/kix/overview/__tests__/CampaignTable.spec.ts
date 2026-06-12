@@ -84,7 +84,8 @@ const stubs = {
     props: ['status']
   },
   RouterLink: {
-    template: '<a data-stub="router-link"><slot /></a>'
+    template: '<a data-stub="router-link" :data-to="to"><slot /></a>',
+    props: ['to']
   }
 }
 
@@ -166,6 +167,19 @@ describe('CampaignTable.vue', () => {
     expect(wrapper.text()).toContain('Lunch spin')
   })
 
+  it('normalises the { items: [...] } wrapper shape', async () => {
+    ;(listCampaigns as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      data: { items: sampleCampaigns }
+    })
+
+    const wrapper = mount(CampaignTable, { global: { stubs } })
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="campaign-table-card"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('茶物语·周末拉新')
+    expect(wrapper.text()).toContain('Lunch spin')
+  })
+
   it('hides the card when the fetch rejects (non-critical UI)', async () => {
     ;(listCampaigns as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
       new Error('network error')
@@ -196,8 +210,10 @@ describe('CampaignTable.vue', () => {
     const wrapper = mount(CampaignTable, { global: { stubs } })
     await flushPromises()
 
-    expect(wrapper.find('[data-testid="campaign-table-view-all"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('View all')
+    const link = wrapper.find('[data-testid="campaign-table-view-all"]')
+    expect(link.exists()).toBe(true)
+    expect(link.text()).toContain('View all')
+    expect(link.attributes('data-to')).toBe('/campaigns')
   })
 
   it('renders "—" for missing optional fields', async () => {

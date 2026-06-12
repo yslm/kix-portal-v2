@@ -51,6 +51,10 @@
 
   const rows = computed<Campaign[]>(() => (data.value ? normalize(data.value) : []))
 
+  // Precedence: spend_str first, fmtSgd(spend_sgd) as fallback — per T5 spec.
+  // NOTE: this is the INVERSE of Campaigns.vue, which prefers the numeric spend_sgd.
+  // If the backend sends both fields, the Overview table and the Campaigns page may
+  // display the spend amount differently (one formatted server-side, one client-side).
   function spendCell(c: Campaign): string {
     if (c.spend_str) return c.spend_str
     if (c.spend_sgd != null) return fmtSgd(c.spend_sgd)
