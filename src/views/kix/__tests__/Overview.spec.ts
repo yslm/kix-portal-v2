@@ -8,7 +8,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 
 vi.mock('@/api/portal-admin/overview', () => ({
-  fetchLiveCards: vi.fn()
+  fetchLiveCards: vi.fn(),
+  // New fetchers used by sub-components imported in Overview.vue.
+  // They self-hide on error/empty so returning a never-resolving promise
+  // keeps the sub-cards hidden without affecting the live-cards section.
+  fetchCohort: vi.fn(() => new Promise(() => {})),
+  fetchAudienceBreakdown: vi.fn(() => new Promise(() => {})),
+  fetchLiveActivity: vi.fn(() => new Promise(() => {})),
+  // Other fetchers referenced transitively by non-critical cards.
+  fetchOverview: vi.fn(() => new Promise(() => {})),
+  fetchMetrics: vi.fn(() => new Promise(() => {})),
+  fetchSetupGuide: vi.fn(() => new Promise(() => {})),
+  fetchNextBestAction: vi.fn(() => new Promise(() => {}))
 }))
 
 vi.mock('vue-i18n', () => ({

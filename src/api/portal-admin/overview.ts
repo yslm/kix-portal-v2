@@ -1,5 +1,8 @@
 import { http } from './http'
 import type {
+  ActivityItem,
+  AudienceSegment,
+  CohortRow,
   LiveCardsResponse,
   MetricCard,
   NextBestActionResponse,
@@ -107,3 +110,30 @@ export const fetchOverview = () => http.get<OverviewResponse>('/api/v1/portal-ad
  * Reference legacy fetcher: `kixLoadMetrics()` at portal.html ~line 3551.
  */
 export const fetchMetrics = () => http.get<MetricCard[]>('/api/v1/portal-admin/metrics')
+
+/**
+ * GET /api/v1/portal-admin/reports/cohort
+ *
+ * Powers the NewCustomersChart — 14-day new-customers line chart on the
+ * Overview view. Returns a bare array of CohortRow (one row per day),
+ * latest 14 days. Brand inferred from the JWT — no `?brand=` param.
+ */
+export const fetchCohort = () => http.get<CohortRow[]>('/api/v1/portal-admin/reports/cohort')
+
+/**
+ * GET /api/v1/portal-admin/audience-breakdown
+ *
+ * Powers the AudienceDonut — N-segment doughnut chart on the Overview view.
+ * Returns a bare array of AudienceSegment. Brand inferred from the JWT.
+ */
+export const fetchAudienceBreakdown = () =>
+  http.get<AudienceSegment[]>('/api/v1/portal-admin/audience-breakdown')
+
+/**
+ * GET /api/v1/portal-admin/activity/live?limit=<n>
+ *
+ * Powers the LiveActivity feed — recent player activity items. Brand inferred
+ * from the JWT. `limit` defaults to 8.
+ */
+export const fetchLiveActivity = (limit = 8) =>
+  http.get<ActivityItem[]>('/api/v1/portal-admin/activity/live', { params: { limit } })

@@ -113,6 +113,75 @@ const MOCKS: Record<string, unknown> = {
       ctr_pct: '4.5%'
     }
   ],
+  // 14-day cohort — bare CohortRow[] (newest last).
+  '/api/v1/portal-admin/reports/cohort': [
+    { cohort_day: '2026-05-30', new_customers: 7 },
+    { cohort_day: '2026-05-31', new_customers: 12 },
+    { cohort_day: '2026-06-01', new_customers: 5 },
+    { cohort_day: '2026-06-02', new_customers: 18 },
+    { cohort_day: '2026-06-03', new_customers: 22 },
+    { cohort_day: '2026-06-04', new_customers: 9 },
+    { cohort_day: '2026-06-05', new_customers: 14 },
+    { cohort_day: '2026-06-06', new_customers: 11 },
+    { cohort_day: '2026-06-07', new_customers: 19 },
+    { cohort_day: '2026-06-08', new_customers: 8 },
+    { cohort_day: '2026-06-09', new_customers: 24 },
+    { cohort_day: '2026-06-10', new_customers: 16 },
+    { cohort_day: '2026-06-11', new_customers: 21 },
+    { cohort_day: '2026-06-12', new_customers: 13 }
+  ],
+  // Audience breakdown — 4 segments summing ~100%.
+  '/api/v1/portal-admin/audience-breakdown': [
+    { source: 'QR poster', count: 142, pct: 46, color: '#3b82f6' },
+    { source: 'Social', count: 87, pct: 28, color: '#10b981' },
+    { source: 'Referral', count: 53, pct: 17, color: '#f59e0b' },
+    { source: 'Walk-in', count: 28, pct: 9, color: '#8b5cf6' }
+  ],
+  // Live activity feed — 6 recent events, mixed types.
+  '/api/v1/portal-admin/activity/live': [
+    {
+      type: 'win',
+      kid: '+65 8123',
+      detail: 'won a free coffee',
+      campaign: '茶物语·周末拉新',
+      timestamp: '2m ago'
+    },
+    {
+      type: 'redeem',
+      kid: '+65 9234',
+      detail: 'redeemed bubble tea',
+      campaign: 'Lunch spin',
+      timestamp: '5m ago'
+    },
+    {
+      type: 'win',
+      kid: '+60 1234',
+      detail: 'won S$5 voucher',
+      campaign: 'Payday blast',
+      timestamp: '8m ago'
+    },
+    {
+      type: 'play',
+      kid: '+65 8456',
+      detail: 'played scratch card',
+      campaign: '茶物语·周末拉新',
+      timestamp: '11m ago'
+    },
+    {
+      type: 'redeem',
+      kid: '+65 7890',
+      detail: 'redeemed free drink',
+      campaign: 'Lunch spin',
+      timestamp: '14m ago'
+    },
+    {
+      type: 'win',
+      kid: '+65 6543',
+      detail: 'won mystery box',
+      campaign: 'Mystery box',
+      timestamp: '18m ago'
+    }
+  ],
   '/api/v1/portal-admin/setup-guide': {
     brand_id: 'demo_brand',
     steps: [

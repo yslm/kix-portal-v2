@@ -23,9 +23,12 @@
   import type { LiveCampaignCard } from '@/api/portal-admin/types'
   import { fmtSgd } from '@/utils/format/currency'
   import { resolveBrandId } from '@/utils/kix/resolveBrandId'
+  import AudienceDonut from './overview/AudienceDonut.vue'
   import CampaignTable from './overview/CampaignTable.vue'
+  import LiveActivity from './overview/LiveActivity.vue'
   import MetricCards from './overview/MetricCards.vue'
   import NbaCard from './overview/NbaCard.vue'
+  import NewCustomersChart from './overview/NewCustomersChart.vue'
   import SetupGuideCard from './overview/SetupGuideCard.vue'
   import StatusStrip from './overview/StatusStrip.vue'
 
@@ -86,6 +89,22 @@
          Placed here between the SetupGuide/NBA pair and the live-cards
          grid, matching the legacy portal.html order (table above cards). -->
     <CampaignTable />
+
+    <!-- Analytics row: 14-day new-customers chart (wide) + audience donut
+         + live activity feed (stacked). Each card self-hides independently.
+         On mobile: single column stack. On lg+: chart spans 2 cols, the
+         donut and feed sit in the 3rd col stacked. -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Chart spans 2 of 3 columns on large screens -->
+      <div class="lg:col-span-2">
+        <NewCustomersChart />
+      </div>
+      <!-- Donut + feed stacked in the 3rd column -->
+      <div class="flex flex-col gap-6">
+        <AudienceDonut />
+        <LiveActivity />
+      </div>
+    </div>
 
     <!-- Live campaigns grid -->
     <section class="space-y-3">

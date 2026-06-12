@@ -1709,3 +1709,56 @@ export interface MetricCard {
   /** Optional benchmark annotation. Falls back to sub_label when absent. */
   benchmark_note?: string
 }
+
+// ---------------------------------------------------------------------------
+// Overview · 14-day new-customers cohort line chart
+// ---------------------------------------------------------------------------
+//
+// Endpoint: GET /api/v1/portal-admin/reports/cohort
+// Response: BARE ARRAY CohortRow[] — one row per calendar day, newest last.
+// The chart renders the last 14 rows.
+
+export interface CohortRow {
+  /** ISO date string, e.g. "2026-05-30". */
+  cohort_day: string
+  /** Count of new verified customers who first appeared on this day. */
+  new_customers: number
+}
+
+// ---------------------------------------------------------------------------
+// Overview · Audience breakdown donut
+// ---------------------------------------------------------------------------
+//
+// Endpoint: GET /api/v1/portal-admin/audience-breakdown
+// Response: BARE ARRAY AudienceSegment[] — one row per acquisition source.
+
+export interface AudienceSegment {
+  /** Display label for the source, e.g. "QR poster", "Social", "Referral". */
+  source: string
+  /** Count of customers attributed to this source. */
+  count: number
+  /** Percentage share (0–100). */
+  pct: number
+  /** Optional custom colour hex, e.g. "#3b82f6". Falls back to theme palette. */
+  color?: string
+}
+
+// ---------------------------------------------------------------------------
+// Overview · Live activity feed
+// ---------------------------------------------------------------------------
+//
+// Endpoint: GET /api/v1/portal-admin/activity/live?limit=<n>
+// Response: BARE ARRAY ActivityItem[] — most recent activity first.
+
+export interface ActivityItem {
+  /** Activity type: 'win' | 'redeem' | or any string (fail-soft). */
+  type: string
+  /** Masked player identifier, e.g. "+65 8123". */
+  kid: string
+  /** Human-readable action description, e.g. "won a free coffee". */
+  detail: string
+  /** Campaign name or identifier, e.g. "茶物语·周末拉新". */
+  campaign: string
+  /** Relative or absolute timestamp, e.g. "2m ago". */
+  timestamp: string
+}
