@@ -66,27 +66,40 @@ const MOCKS: Record<string, unknown> = {
     ]
   },
   // Bare array — mirrors FastAPI response_model=list[Campaign].
-  // Four rows with varied status values that StatusBadge maps to coloured pills.
+  // Carries BOTH the real backend fields (spend_sgd / new_customers /
+  // cpa_sgd / plays / game_type) consumed by the rebuilt Campaigns view
+  // AND the legacy aliases (spend_str / conversions / cpa_str) the
+  // Overview CampaignTable still reads — so both render under demo.
   '/api/v1/portal-admin/campaigns': [
     {
       id: 'demo-c-001',
       name: '茶物语·周末拉新',
-      status: 'active',
-      objective: 'Acquisition',
-      spend_str: 'S$28.5',
+      status: 'live',
+      objective: 'NEW',
+      game_type: 'spin',
+      spend_sgd: 285,
+      spend_str: 'S$285',
       impressions: 3200,
-      conversions: 18,
+      plays: 1180,
+      new_customers: 180,
+      conversions: 180,
+      cpa_sgd: 1.58,
       cpa_str: 'S$1.58',
       ctr_pct: 3.2
     },
     {
       id: 'demo-c-002',
       name: 'Lunch spin',
-      status: 'active',
-      objective: 'Retention',
-      spend_str: 'S$45.0',
+      status: 'live',
+      objective: 'REPEAT',
+      game_type: 'scratch',
+      spend_sgd: 450,
+      spend_str: 'S$450',
       impressions: 1500,
-      conversions: 9,
+      plays: 640,
+      new_customers: 90,
+      conversions: 90,
+      cpa_sgd: 5.0,
       cpa_str: 'S$5.00',
       ctr_pct: '2.1%'
     },
@@ -94,10 +107,15 @@ const MOCKS: Record<string, unknown> = {
       id: 'demo-c-003',
       name: 'Payday blast',
       status: 'paused',
-      objective: 'Awareness',
-      spend_str: 'S$12.0',
+      objective: 'REACH',
+      game_type: 'mystery',
+      spend_sgd: 120,
+      spend_str: 'S$120',
       impressions: 820,
-      conversions: 4,
+      plays: 210,
+      new_customers: 40,
+      conversions: 40,
+      cpa_sgd: 3.0,
       cpa_str: 'S$3.00',
       ctr_pct: 1.8
     },
@@ -105,10 +123,15 @@ const MOCKS: Record<string, unknown> = {
       id: 'demo-c-004',
       name: 'Mystery box',
       status: 'ended',
-      objective: 'Acquisition',
-      spend_str: 'S$96.0',
+      objective: 'NEW',
+      game_type: 'quiz',
+      spend_sgd: 960,
+      spend_str: 'S$960',
       impressions: 8100,
-      conversions: 52,
+      plays: 3020,
+      new_customers: 520,
+      conversions: 520,
+      cpa_sgd: 1.85,
       cpa_str: 'S$1.85',
       ctr_pct: '4.5%'
     }

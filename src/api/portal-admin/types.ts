@@ -170,6 +170,24 @@ export interface Campaign {
   cpa_str?: string
   startsAt?: string
   endsAt?: string
+
+  // ---- Real backend Campaign fields (portal_admin.py · class Campaign,
+  // ~line 168). The list endpoint returns these raw-numeric/string fields;
+  // the `*_str` / `conversions` aliases above are frontend-convenience
+  // shapes used by the demo mock + Overview CampaignTable. The Campaigns
+  // view prefers the REAL fields and falls back to the aliases. NOTE: the
+  // backend has NO `budget` field — the legacy "Budget" column was always
+  // an em-dash, so the rebuilt Campaigns table drops it.
+  game_type?: string
+  reward?: string
+  schedule?: string
+  audience_name?: string
+  plays?: number
+  /** Real "conversions" — verified new customers. `conversions` above is
+   *  the legacy alias; the view reads `new_customers ?? conversions`. */
+  new_customers?: number
+  /** Real cost-per-acquisition (numeric SGD). `cpa_str` is the alias. */
+  cpa_sgd?: number
 }
 
 /**
