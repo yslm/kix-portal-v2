@@ -174,11 +174,11 @@ Original spec had 19 P2 views; audit recommended subtraction:
 - README quickstart + DEPLOY.md cutover SOP shipped
 - Plan 7 cutover documented; held pending user approval
 
-## Week 7: Overview deepening (in progress)
+## Week 7: Overview deepening — COMPLETE (2026-06-12)
 
-**Status: ACTIVE — T0/T1/T2 of 7 done; T2 pending user visual review when session resumes**
+**Status: DONE — all 9 Overview sections shipped, reviewed, pushed. User approved the art-design-pro card visual direction. See "Resume here next time" below.**
 
-Plan file: `kix-platform/docs/superpowers/plans/2026-06-11-portal-v2-week7-overview-deepening.md`
+Plan file `kix-platform/docs/superpowers/plans/2026-06-11-portal-v2-week7-overview-deepening.md` NO LONGER EXISTS (the kix-platform plans dir is empty). Task specs were reconstructed from PROGRESS + the legacy `kix-platform/landing/portal.html` source. Don't rely on the plan file path above.
 
 Plan 7 was originally "Production cutover (HELD)" (now moved to § Future below). After Plan 6 user visual review, the cadence was redefined: each view needs MULTIPLE sub-sections, not just 1 thin slice. Overview goes first as the pacing template — if 1-week works for 9 sections of Overview, the same per-view deepening applies to the other 17 views in Plan 8+.
 
@@ -216,19 +216,44 @@ Hardened `e2e/p0-views.spec.ts` along the way: it used a fake `kix_token` (inval
 
 ¹ T0 = off-plan hotfix. T1 SetupGuideCard was the first call into `/api/v1/portal-admin/*` from a demo-reachable view, exposing a Plan 1 latent asymmetry: `tokenGuard` honored `?brand=` bypass, but `kixHttp`'s 401 interceptor did NOT — so a 401 from any portal-admin endpoint kicked demo users back to signin before the calling component's try/catch could swallow it. Fixed before T2 because T2-T7 all hit portal-admin endpoints; without T0 every one would re-break demo mode.
 
-### Result so far
+### Final result (end of session 2026-06-12)
 
-- Tests: 122/122 vitest (was 110 after Week 6; +1 tokenGuard hotfix d66f92e, +3 kixHttp demo branch, +5 SetupGuideCard from T1, +5 NbaCard from T2 — also passes `--sequence.shuffle` for kixHttp.spec).
-- TS: zero new errors from this stream (pre-existing 59 vue-tsc SFC module errors unchanged; +1 trivial structural error for the new `.vue` file, same shape as every existing v2 .vue).
-- Demo mode (`?brand=` BEFORE the hash) verified end-to-end at the kixHttp layer via unit tests: tokenGuard pass → cards mount → 401 → kixHttp rejects without redirect → card try/catch swallows → silent hide. Setup guide and NBA cards both fail-soft.
-- Push state: **last pushed = 2f9a1d4 (T1).** Four commits unpushed locally: 3f76d0e, bd718ae, 520cce2, 50c4606. Push when convenient.
+- Tests: **161/161 vitest** (was 122 mid-session); **e2e 7/7**.
+- TS: `pnpm tsc --noEmit | grep -cE "error TS"` = 66 — all pre-existing `.vue` TS2307 module-resolution noise (one per spec file); **zero new production errors** from this stream.
+- Push state: **fully pushed.** `feat/foundation` HEAD = `acca29c`. Nothing unpushed.
+- Every section went through subagent cadence (implementer → spec review → quality review → fix). The quality reviews caught real issues: a false-positive test (T4), and a runtime bug (AudienceDonut `:color` vs `:colors` — donut was dropping brand colors silently, commit 32c9abf).
 
-### Next: visual review T2 + dispatch T3
+### ▶ RESUME HERE NEXT TIME (paused 2026-06-12)
 
-When session resumes:
+**Where we are:** Overview is fully deepened and looks native to art-design-pro. The per-view deepening _template_ is proven end-to-end. Two big tracks remain toward the user's goal ("把原 portal 内容都搬过来" — migrate ALL original portal content):
 
-1. **First — visual review T2** (Task #4 in the TodoWrite stream): `cd /Users/yangshenlin/work/gimifacation-paltorm/kix-portal-v2 && pnpm dev` → open `http://localhost:3006/portal/?brand=demo` (note: `?brand=demo` MUST sit BEFORE the hash — see § Demo-mode contract). With no token, both Setup guide and NBA cards should silently hide (401 fail-soft). To eyeball the NBA card's actual rendering, either (a) sign into a real KiX env to get a token, (b) ask the controller to write a vite mock middleware for the two endpoints, or (c) skim `src/views/kix/overview/__tests__/NbaCard.spec.ts` line 48-95 for the rendered text snapshots.
-2. **Then — T3 Status strip** (Plan 7 line 27/204): `src/views/kix/overview/StatusStrip.vue` + `/api/v1/portal-admin/overview` (Reports leg). Wallet balance + 7-day new customers + active campaigns + budget used. Layout target: TOP row of Overview (above the SetupGuide/NBA middle row). Same per-task template as T1/T2.
+- **(A) Breadth — deepen the other ~17 views.** Most are 1 thin section today; ~12 are still bare `Placeholder`. Apply the Overview template to the content-heavy main views first (Reports, Campaigns, Games, Builder, Customers). User leaned toward starting with **Reports**, but no view was committed — confirm with user before starting.
+- **(B) Batched styling pass.** User explicitly said styling will be adjusted _together later_ ("后续一起来改样式"). When several views are deepened, do one pass unifying every migrated view (incl. the OLD hand-rolled tables like `Campaigns.vue`) onto the `.art-card` / `ArtTable` / `text-success·danger` / `bg-theme·text-theme` language.
+
+**The reusable template (how each section was built — repeat this):**
+
+1. add `fetchX` to `src/api/portal-admin/<view>.ts` + type to `types.ts`
+2. component under `src/views/kix/<view>/` using `useNonCriticalCard(fetchX, { isReady })` from `src/hooks/kix/useNonCriticalCard.ts` (self-hides on loading/error/empty)
+3. reuse art-design-pro components: `ArtLineChartCard` / `ArtRingChart` (N-seg donut, pass `:colors` PLURAL) / `ArtDataListCard` / `ElTable` / `.art-card` + `bg-theme/10 text-theme` icon squares (canonical stat-card ref: `src/views/dashboard/console/modules/card-list.vue`)
+4. add a demo payload to `src/mock/portalAdminMock.ts` so visual review works
+5. compose into the view; add a TDD spec; run the subagent cadence (implementer → spec review → quality review → fix). The quality review pass is EARNING ITS KEEP — keep it.
+
+**Visual review workflow (KEY — cards self-hide without data):**
+
+```bash
+cd /Users/yangshenlin/work/gimifacation-paltorm/kix-portal-v2
+pnpm dev:mock        # VITE_PORTAL_MOCK=1 — serves demo payloads for /api/v1/portal-admin/*
+# open (incognito to avoid stale state): http://localhost:3006/portal/?brand=demo#/overview
+```
+
+The portal-admin endpoints are JWT-gated → 401 in demo → cards fail-soft hide. `dev:mock` (commit 7740655, `src/mock/portalAdminMock.ts`) returns demo data so you can SEE them. Plain `pnpm dev` and production build are unaffected.
+
+**Verify commands:** `pnpm vitest run` (expect 161+), `pnpm tsc --noEmit 2>&1 | grep -cE "error TS"` (baseline ~66, all `.vue` spec noise — zero new production errors is the bar), `pnpm e2e` (7/7).
+
+**Open visual nits (fold into the styling pass):**
+
+- Metric card "Spent · CPA" — its long value (`S$1,800 · S$8.41`) crowds the right-side icon square on narrow 4-col widths. User said "good enough" for now; fix in styling pass (truncate / hide icon when value long / drop to 3 cols).
+- `Campaigns.vue` (and other early views) still use hand-rolled `<table>` + `bg-white border` — upgrade to the native look in the styling pass. NOTE: its `spendCell` prefers `spend_sgd` while the new Overview `CampaignTable` prefers `spend_str` (per-spec) — reconcile then.
 
 ### Demo-mode contract (carry forward — important for T3-T7)
 
