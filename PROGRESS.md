@@ -196,6 +196,7 @@ Each task = one sub-component under `src/views/kix/overview/`, composed into `Ov
 | T0²  | 613bacc | fix(layout): populate sidebar menu for KiX portal — decouple from isLogin     |
 | T3   | 6fc11a4 | feat(overview): status strip — wallet / new-7d / live campaigns / runway      |
 | T3   | 15a565e | test(overview): drop inert el-card stub from StatusStrip spec                 |
+| T3.5 | c2e1660 | refactor(overview): extract useNonCriticalCard — dedupe 3-card load pattern   |
 
 ² T0 = off-plan fix surfaced during T2 visual review. User reported "the portal looks nothing like art-design-pro — no left sidebar." Root cause: portal-v2 IS an art-design-pro fork (the perceived gap was wrong); the sidebar was empty because art-design-pro only fills `menuStore` inside its login-gated dynamic-route flow (`beforeEach` → `handleDynamicRoutes`, guarded by `userStore.isLogin`), and KiX authenticates via its own `tokenGuard` and never sets `isLogin`. So `menuList` stayed `[]` and `art-sidebar-menu` hid the whole tree (`v-show="menuList.length > 0"`). Fix: `ensurePortalMenu()` (idempotent, frontend-static) called from `App.vue onBeforeMount`, decoupled from `isLogin`.
 
@@ -231,7 +232,7 @@ When session resumes:
 4. **`Object.prototype.hasOwnProperty.call(NBA_COPY, a.id)` → `a.id in NBA_COPY`** — janitorial. Defensive form is unnecessary for static literal keys; legacy `KIX_NBA_COPY[a.id]` truthy check is closer to the reference.
 5. **NbaCard test #1 splits + add `view: undefined` coverage** — janitorial.
 
-6. **Extract `useNonCriticalCard(fetcher)` composable** — rule-of-three now real across SetupGuideCard / NbaCard / StatusStrip: identical `loading`/`error`/`data` refs + `load()` try/catch/finally with `error = e instanceof Error ? e.message : String(e)` + `onMounted(load)` + `visible = !loading && !error && <hasData>`. T3 code-quality review flagged it as a follow-up (NOT in-task scope). A composable returning `{ data, visible, reload }` with the error-swallow baked in, leaving each card to supply only its extra visibility predicate, would dedupe all three. Do before T4+ adds a fourth copy.
+6. **Extract `useNonCriticalCard(fetcher)` composable** — DONE (T3.5 · c2e1660). `src/hooks/kix/useNonCriticalCard.ts` returns `{ loading, error, data, visible, reload }` with the error-swallow baked in; each card supplies its extra visibility predicate via `options.isReady`. SetupGuide/NBA/StatusStrip migrated. Behavior-preserving: the 3 card spec files are byte-identical and still green; +8 composable tests; full suite 135. Reviewer walked SetupGuideCard's full truth table — no diverging input. T4+ cards use it.
 7. **art-design-pro `axiosInstance` (`src/utils/http/index.ts`) has the same 401 asymmetry as kixHttp had before T0** — portal-admin doesn't route through it today, so non-blocking. Harden symmetrically if a future code path under demo mode ever uses it.
 8. **`?brand=` in hash branch in kixHttp** — UNSUPPORTED on purpose (no Route context in interceptor). If a UX need surfaces ("merchant pasted a hash-internal demo link and got kicked"), revisit by passing `to.query` through to a request-config flag, NOT by parsing the hash inside the interceptor.
 
