@@ -335,6 +335,50 @@ Reports has 3 solid new sections + the owner card. Next candidates by the same t
 
 ---
 
+## Week 8b: Campaigns rebuild — first ArtTable + art-design-pro restyle (2026-06-13)
+
+**Status: DONE — Campaigns view rebuilt onto native art-design-pro components, headless-reviewed, committed.**
+
+This is the FIRST view to use the real `ArtTable` (column-config + formatters) instead of a hand-rolled `<table>` or raw ElTable — the answer to the user directive "和 art design pro 组件模板做对比,按他们的组件样式美化". It establishes the restyle pattern for the batched styling pass (Week 7 track B).
+
+### Commit
+
+- fa70d37 feat(campaigns): rebuild onto ArtTable + KPI strip + filter toolbar
+
+### What shipped
+
+- **KPI summary strip** — canonical card-list anatomy (`.art-card relative flex flex-col justify-center` + `bg-theme/10 text-theme` `size-12.5` icon square, same as Overview MetricCards / `dashboard/console/modules/card-list.vue`): Total campaigns / Active now / Total spend / New customers, all honest aggregates of real fields.
+- **Filter toolbar** — status segmented control (All/Active/Paused/Pending/Ended) + name search (`ElInput`) + "+ Create campaign" `ElButton` → `/builder`. Client-side filter over the loaded list (legacy bars were decoration; backend supports `?status=` but list is small → one round-trip).
+- **ArtTable** — globally auto-registered (`ArtTable`/`ArtTableHeader`/`ArtStatsCard` in `src/types/import/components.d.ts`). columns via `ColumnOption[]` + `formatter` returning VNodes; native pagination footer (client-side slice). Columns: Status badge · Campaign (name + objective·game_type) · Spend · Impressions · Plays · New customers · CPA · CTR.
+
+### NO-FAKE-DATA reconciliation (verified vs backend `class Campaign` ~portal_admin.py:168)
+
+Real model: `spend_sgd / impressions / plays / new_customers / cpa_sgd / ctr_pct / game_type / reward / schedule / audience_name`. The legacy frontend used aliases (`spend_str / conversions / cpa_str`) that the demo mock + Overview CampaignTable still read.
+
+- Pure helpers in `src/views/kix/campaigns/campaignsModel.ts` (unit-tested, 14 cases) prefer the REAL field, fall back to the alias, em-dash when neither — so both shapes render and nothing is fabricated.
+- **Dropped the legacy "Budget" column** — backend has NO budget field (was always an em-dash).
+- Surfaced real fields the old table ignored: `plays`, `game_type`.
+- `Campaign` type extended additively (optional real fields) — Overview CampaignTable untouched. Demo `/campaigns` mock now carries BOTH real fields + aliases so both views render.
+
+### Result
+
+- Tests **197/197** (+17 vs Reports session: 14 model + 3 net on Campaigns spec rewrite). tsc zero new production errors.
+- Headless Playwright (`?brand=demo#/campaigns`): KPIs 4 / 2 / S$1,815 / 830; 4 rows; "Active" filter → 2 rows; all 8 columns fit (trimmed widths after first screenshot clipped CTR). Looks fully native to art-design-pro.
+
+### Reusable restyle pattern (for the rest of the views)
+
+1. Extract pure logic (normalize / KPIs / filter / field-accessors) to a `<view>/<view>Model.ts` — unit-test it (no mount).
+2. KPI strip = card-list anatomy. Main list = `ArtTable` + `ColumnOption[]` + `formatter` VNodes (auto-registered, no import). Toolbar = segmented filter + `ElInput` search + `ElButton` CTA.
+3. Reconcile fields against the REAL backend model BEFORE building; drop columns with no real source; prefer real field + alias fallback + em-dash.
+4. Component test stubs `ArtTable`/`ArtSvgIcon`/`ElInput`/`ElButton`; assert wiring (data→table, filter, CTA, states). Heavy logic covered by the model spec.
+5. Enrich the demo mock with real fields; headless-screenshot at 1280px to catch column clipping.
+
+### ▶ RESUME HERE (breadth track)
+
+Campaigns is the proven ArtTable restyle template. Remaining single-thin views to give the same treatment: **Games / Builder / Customers / Flows / Audiences / AbTests / Rules**, plus the P2 set. Reconcile the OLD `CampaignTable.vue` (Overview) + `TopCampaignsTable.vue` (Reports) — they read the alias fields; now that the mock + type carry the real fields, they could move to real-field-first too (low priority; they render fine).
+
+---
+
 ## Future: Production cutover (HELD — deferred until view deepening complete)
 
 Originally Plan 7. Now deferred to after all view-deepening passes finish (Week 7 Overview + Plan 8+ for the remaining 17 views) AND user signs off on visual parity per view.
