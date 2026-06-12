@@ -55,4 +55,42 @@ describe('kixHttp', () => {
       expect.stringMatching(/^\/landing\/signin\.html\?next=/)
     )
   })
+
+  it('on 401 with no token and ?brand= in location.search, rejects without redirecting (demo mode)', async () => {
+    const replaceSpy = vi.fn()
+    Object.defineProperty(window, 'location', {
+      writable: true,
+      value: { pathname: '/portal/', search: '?brand=demo', hash: '', replace: replaceSpy }
+    })
+    mock.onGet('/api/v1/portal-admin/setup-guide').reply(401, { detail: 'unauthorized' })
+    await expect(kixHttp.get('/api/v1/portal-admin/setup-guide')).rejects.toThrow()
+    expect(replaceSpy).not.toHaveBeenCalled()
+  })
+
+  it('on 401 with token expired, still redirects even if ?brand= present', async () => {
+    localStorage.setItem('kix_token', 'expired')
+    const replaceSpy = vi.fn()
+    Object.defineProperty(window, 'location', {
+      writable: true,
+      value: { pathname: '/portal/', search: '?brand=demo', hash: '', replace: replaceSpy }
+    })
+    mock.onGet('/api/v1/secret').reply(401, { detail: 'expired' })
+    await expect(kixHttp.get('/api/v1/secret')).rejects.toThrow()
+    expect(replaceSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/^\/landing\/signin\.html\?next=/)
+    )
+  })
+
+  it('on 401 with no token and no brand bypass, redirects (anonymous, no escape hatch)', async () => {
+    const replaceSpy = vi.fn()
+    Object.defineProperty(window, 'location', {
+      writable: true,
+      value: { pathname: '/portal/', search: '', hash: '', replace: replaceSpy }
+    })
+    mock.onGet('/api/v1/secret').reply(401, { detail: 'unauthorized' })
+    await expect(kixHttp.get('/api/v1/secret')).rejects.toThrow()
+    expect(replaceSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/^\/landing\/signin\.html\?next=/)
+    )
+  })
 })

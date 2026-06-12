@@ -29,15 +29,34 @@ kixHttp.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config
 })
 
-// Response interceptor: pass through on success; redirect on 401
+/**
+ * Response interceptor: pass through on success; redirect on 401.
+ *
+ * Symmetric with the route-level demo bypass in `src/router/guards/tokenGuard.ts`
+ * (see the `hasBrand` line). The route guard lets anonymous traffic through when
+ * `?brand=` is present in `location.search`; without the same check here, any 401
+ * from a demo-reachable view (e.g. /overview → /api/v1/portal-admin/setup-guide)
+ * would slam the user back to /landing/signin.html before the calling component
+ * could swallow the error, silently breaking the demo gate.
+ *
+ * Rule: redirect on 401 unless the caller is anonymous AND the demo brand bypass
+ * is active. Token-expired (token present + 401) still redirects regardless of
+ * the brand bypass — that path is a real session expiry, not a demo visit.
+ */
 kixHttp.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error?.response?.status === 401) {
-      const nextUrl = encodeURIComponent(
-        window.location.pathname + window.location.search + window.location.hash
+      const hasToken = !!(
+        localStorage.getItem('kix_token') || localStorage.getItem('kix_portal_token')
       )
-      window.location.replace('/landing/signin.html?next=' + nextUrl)
+      const hasBrandBypass = new URLSearchParams(window.location.search).has('brand')
+      if (hasToken || !hasBrandBypass) {
+        const nextUrl = encodeURIComponent(
+          window.location.pathname + window.location.search + window.location.hash
+        )
+        window.location.replace('/landing/signin.html?next=' + nextUrl)
+      }
     }
     return Promise.reject(error)
   }
