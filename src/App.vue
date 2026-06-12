@@ -19,6 +19,7 @@
   import { toggleTransition } from './utils/ui/animation'
   import { checkStorageCompatibility } from './utils/storage'
   import { initializeTheme } from './hooks/core/useTheme'
+  import { ensurePortalMenu } from './router/portalMenu'
 
   const userStore = useUserStore()
   const { language } = storeToRefs(userStore)
@@ -31,6 +32,11 @@
   onBeforeMount(() => {
     toggleTransition(true)
     initializeTheme()
+    // Populate the sidebar menu for the KiX portal. art-design-pro only
+    // populates it inside its login-gated dynamic-route flow, which the KiX
+    // token-guard flow bypasses — see src/router/portalMenu.ts. Fire-and-forget:
+    // the sidebar reads menuStore reactively, so it fills in once resolved.
+    ensurePortalMenu()
   })
 
   onMounted(() => {
