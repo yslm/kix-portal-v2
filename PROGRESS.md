@@ -193,6 +193,13 @@ Each task = one sub-component under `src/views/kix/overview/`, composed into `Ov
 | T0¹  | bd718ae | refactor(http): tighten kixHttp 401 demo-bypass JSDoc + harden test isolation |
 | T2   | 520cce2 | feat(overview): NBA suggested next move card                                  |
 | T2   | 50c4606 | fix(overview): NBA card uses S$ for SGD (was ¥ from legacy)                   |
+| T0²  | 613bacc | fix(layout): populate sidebar menu for KiX portal — decouple from isLogin     |
+
+² T0 = off-plan fix surfaced during T2 visual review. User reported "the portal looks nothing like art-design-pro — no left sidebar." Root cause: portal-v2 IS an art-design-pro fork (the perceived gap was wrong); the sidebar was empty because art-design-pro only fills `menuStore` inside its login-gated dynamic-route flow (`beforeEach` → `handleDynamicRoutes`, guarded by `userStore.isLogin`), and KiX authenticates via its own `tokenGuard` and never sets `isLogin`. So `menuList` stayed `[]` and `art-sidebar-menu` hid the whole tree (`v-show="menuList.length > 0"`). Fix: `ensurePortalMenu()` (idempotent, frontend-static) called from `App.vue onBeforeMount`, decoupled from `isLogin`.
+
+A SECOND report ("stuck on /auth/login") was NOT a code bug — it was stale browser state at the :3007 fallback port. Fresh-context repro: 9/9 clean (3 entry URLs + 6 cold loads), 0 bounces. Settled via headless Playwright + a one-variable test, not guessing.
+
+Hardened `e2e/p0-views.spec.ts` along the way: it used a fake `kix_token` (invalid → 401 → redirects to signin before the view renders) and only checked body-non-empty, so it passed even on a redirected auth page. Switched to the `?brand=demo` contract + added URL-reachability and sidebar-renders assertions. Also registered `unplugin-auto-import` + `__APP_VERSION__` in `vitest.config` so tests can import real app modules.
 
 ¹ T0 = off-plan hotfix. T1 SetupGuideCard was the first call into `/api/v1/portal-admin/*` from a demo-reachable view, exposing a Plan 1 latent asymmetry: `tokenGuard` honored `?brand=` bypass, but `kixHttp`'s 401 interceptor did NOT — so a 401 from any portal-admin endpoint kicked demo users back to signin before the calling component's try/catch could swallow it. Fixed before T2 because T2-T7 all hit portal-admin endpoints; without T0 every one would re-break demo mode.
 
