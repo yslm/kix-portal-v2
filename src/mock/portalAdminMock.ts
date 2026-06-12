@@ -130,6 +130,73 @@ const MOCKS: Record<string, unknown> = {
     { cohort_day: '2026-06-11', new_customers: 21 },
     { cohort_day: '2026-06-12', new_customers: 13 }
   ],
+  // Reports · Owner summary · today's redemptions (legacy fmtSgd count).
+  '/api/v1/portal-admin/redemptions/today': { count: 24, value_str: 'S$312' },
+  // Reports · Owner summary · RFM segments. returningPlayers =
+  // champions + loyal + at_risk = 12 + 20 + 8 = 40 (per the aggregator).
+  '/api/v1/portal-admin/customers/rfm-summary': {
+    brand_id: 'demo_brand',
+    sampled: 60,
+    segments: { champions: 12, loyal: 20, at_risk: 8, new: 15, lost: 5 },
+    basis: 'demo'
+  },
+  // Reports · Performance · Top campaigns by ROAS ({ items } envelope,
+  // mirrors top_campaigns_report() demo seed at portal_admin.py line 2385).
+  '/api/v1/portal-admin/reports/top-campaigns': {
+    items: [
+      {
+        name: 'Lunch spin · 200m geofence',
+        spend_str: 'S$378',
+        spend_sgd: 378.0,
+        conversions: 87,
+        roas: 6.4
+      },
+      {
+        name: 'Scratch & win · breakfast',
+        spend_str: 'S$214',
+        spend_sgd: 214.0,
+        conversions: 42,
+        roas: 5.9
+      },
+      {
+        name: 'Mystery box · evening',
+        spend_str: 'S$128',
+        spend_sgd: 128.0,
+        conversions: 18,
+        roas: 5.2
+      },
+      {
+        name: 'Streak · retention',
+        spend_str: 'S$94',
+        spend_sgd: 94.0,
+        conversions: 14,
+        roas: 4.6
+      },
+      { name: 'Quiz · brand recall', spend_str: 'S$72', spend_sgd: 72.0, conversions: 9, roas: 4.1 }
+    ],
+    source: 'demo · top_campaigns:demo',
+    updated_at: '2026-06-13T00:00:00Z',
+    empty_state_hint: null
+  },
+  // Reports · Engagement · conversion funnel ({ items } envelope, source=true;
+  // mirrors funnel_report() demo seed at portal_admin.py line 782).
+  '/api/v1/portal-admin/reports/funnel': {
+    items: [
+      { step: 'Impressions', count: 14238 },
+      { step: 'Plays', count: 3892, conversion_pct: 27.3 },
+      { step: 'Winners', count: 2179, conversion_pct: 56.0 },
+      { step: 'Redeemed at counter', count: 412, conversion_pct: 18.9 },
+      { step: 'Verified new customers', count: 147, conversion_pct: 35.7 },
+      { step: 'Returned in 14 days', count: 42, conversion_pct: 28.6 }
+    ],
+    source: 'demo · funnel:demo:7d (deterministic seed)',
+    freshness: 'demo-static',
+    empty_state_hint: null
+  },
+  // Reports · Live monitoring · "Live now" (two legs, mirror
+  // monitoring_live() + ops_today() at portal_admin.py lines 2147 / 2166).
+  '/api/v1/portal-admin/monitoring/live': { plays_today: 318, plays_per_min: 2.4 },
+  '/api/v1/portal-admin/ops/today': { redemptions: 24, plays: 318, new_customers: 12, actions: [] },
   // Audience breakdown — 4 segments summing ~100%.
   '/api/v1/portal-admin/audience-breakdown': [
     { source: 'QR poster', count: 142, pct: 46, color: '#3b82f6' },

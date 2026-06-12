@@ -3,7 +3,12 @@ import type {
   OwnerReportSummary,
   RedemptionsTodayResponse,
   RfmSummaryResponse,
-  StatusStrip
+  StatusStrip,
+  TopCampaignsResponse,
+  FunnelResponse,
+  MonitoringLiveResponse,
+  OpsTodayResponse,
+  LiveMonitor
 } from './types'
 
 /**
@@ -40,6 +45,72 @@ export const fetchRedemptionsToday = () =>
 
 export const fetchRfmSummary = () =>
   http.get<RfmSummaryResponse>(`${PORTAL_ADMIN}/customers/rfm-summary`)
+
+/**
+ * GET /api/v1/portal-admin/reports/top-campaigns?limit=<n>
+ *
+ * Powers the Reports · Performance "Top campaigns by ROAS" table
+ * (legacy `#reports-top-campaigns`, data-source attribute at portal.html
+ * line 2015; renderer `kixLoadTopCampaigns()` ~line 5010). Brand is
+ * inferred server-side from the JWT — no `?brand=` query param.
+ *
+ * Returns `{ items, source, updated_at, empty_state_hint }`. For real
+ * brands spend/conversions/roas are `null` until per-campaign attribution
+ * exists (honest, not fabricated) — the table renders em-dashes.
+ */
+export const fetchTopCampaigns = (limit = 5) =>
+  http.get<TopCampaignsResponse>(`${PORTAL_ADMIN}/reports/top-campaigns`, {
+    params: { limit }
+  })
+
+/**
+ * GET /api/v1/portal-admin/reports/funnel?source=true
+ *
+ * Powers the Reports · Engagement conversion funnel (legacy
+ * `#engagement-funnel`, renderer `kixRenderFunnelSvg()` ~line 5030).
+ * `source=true` returns the `{ items, source, empty_state_hint, … }`
+ * envelope (vs a bare `FunnelStep[]` when omitted). Brand is inferred
+ * server-side from the JWT — no `?brand=` query param.
+ */
+export const fetchFunnel = () =>
+  http.get<FunnelResponse>(`${PORTAL_ADMIN}/reports/funnel`, {
+    params: { source: true }
+  })
+
+export const fetchMonitoringLive = () =>
+  http.get<MonitoringLiveResponse>(`${PORTAL_ADMIN}/monitoring/live`)
+
+export const fetchOpsToday = () => http.get<OpsTodayResponse>(`${PORTAL_ADMIN}/ops/today`)
+
+/**
+ * Compose the Reports · Live monitoring "Live now" reading. Fans out
+ * /monitoring/live and /ops/today in parallel; each leg is independently
+ * tolerated (same `.catch(() => null)` pattern as `fetchOwnerReport`):
+ * a failed endpoint yields `null` fields, never a fabricated number.
+ *
+ * `plays_today` prefers /monitoring/live but falls back to /ops/today's
+ * `plays` (both read the same `brand:{bid}:game_plays:{day}` counter) so
+ * a partial outage still surfaces it. Returns the `{ data }` shape that
+ * `useNonCriticalCard` expects.
+ */
+export async function fetchLiveMonitor(): Promise<{ data: LiveMonitor }> {
+  const [liveRes, opsRes] = await Promise.all([
+    fetchMonitoringLive().catch(() => null),
+    fetchOpsToday().catch(() => null)
+  ])
+
+  const live = liveRes?.data ?? null
+  const ops = opsRes?.data ?? null
+
+  return {
+    data: {
+      plays_per_min: live ? (live.plays_per_min ?? null) : null,
+      plays_today: live ? (live.plays_today ?? null) : ops ? (ops.plays ?? null) : null,
+      redemptions_today: ops ? (ops.redemptions ?? null) : null,
+      new_customers_today: ops ? (ops.new_customers ?? null) : null
+    }
+  }
+}
 
 /**
  * Compose the owner-report summary. Each leg is independently tolerated:

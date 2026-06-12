@@ -40,6 +40,9 @@
   import { useI18n } from 'vue-i18n'
   import { fetchOwnerReport } from '@/api/portal-admin/reports'
   import type { OwnerReportSummary } from '@/api/portal-admin/types'
+  import TopCampaignsTable from './reports/TopCampaignsTable.vue'
+  import FunnelChart from './reports/FunnelChart.vue'
+  import LiveMonitor from './reports/LiveMonitor.vue'
 
   const { t } = useI18n()
 
@@ -147,5 +150,18 @@
         <div class="text-xs text-gray-500 mt-1">{{ repeatLabel }}</div>
       </div>
     </section>
+
+    <!-- Performance · Top campaigns by ROAS (legacy #reports-top-campaigns,
+         lines 2011-2019). Self-hiding non-critical card — renders only when
+         the backend returns ≥1 campaign. -->
+    <TopCampaignsTable />
+
+    <!-- Engagement · conversion funnel (legacy #engagement-funnel, lines
+         2022-2039). Self-hides until there's a real funnel. -->
+    <FunnelChart />
+
+    <!-- Live monitoring · "Live now" (legacy lines 2061-2072). Composed
+         from /monitoring/live + /ops/today; self-hides if both legs fail. -->
+    <LiveMonitor />
   </div>
 </template>

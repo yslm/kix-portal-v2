@@ -375,6 +375,97 @@ export interface OwnerReportSummary {
 }
 
 // ---------------------------------------------------------------------------
+// Reports · Performance tab · "Top campaigns by ROAS"
+// ---------------------------------------------------------------------------
+//
+// Endpoint: GET /api/v1/portal-admin/reports/top-campaigns?limit=<n>
+// Backend: portal_admin.py · top_campaigns_report() (~line 2339).
+//
+// Demo / real both return the `{ items, source, updated_at,
+// empty_state_hint }` envelope. For REAL brands spend/conversions/roas
+// stay `null` until per-campaign attribution exists (the backend is
+// deliberately honest — "—" / null, never fabricated), so every numeric
+// field is nullable and the table renders an em-dash when absent.
+export interface TopCampaign {
+  name: string
+  spend_str?: string
+  spend_sgd?: number | null
+  conversions?: number | null
+  roas?: number | null
+  status?: string
+}
+
+export interface TopCampaignsResponse {
+  items: TopCampaign[]
+  source?: string
+  updated_at?: string
+  empty_state_hint?: string | null
+}
+
+// ---------------------------------------------------------------------------
+// Reports · Engagement tab · conversion funnel
+// ---------------------------------------------------------------------------
+//
+// Endpoint: GET /api/v1/portal-admin/reports/funnel?source=true
+// Backend: portal_admin.py · funnel_report() (~line 772).
+//
+// Six steps top→bottom: Impressions → Plays → Winners → Redeemed at
+// counter → Verified new customers → Returned in 14 days. The first step
+// has no `conversion_pct` (nothing above it); each subsequent step's
+// conversion_pct is its count ÷ the previous step's count.
+//
+// With `?source=true` the steps are wrapped in the `{ items, source, … }`
+// envelope; without it the endpoint returns a bare `FunnelStep[]`. We
+// tolerate both (the view always requests source=true for the hint).
+export interface FunnelStep {
+  step: string
+  count: number
+  conversion_pct?: number
+}
+
+export interface FunnelResponse {
+  items: FunnelStep[]
+  source?: string
+  source_key?: string
+  updated_at?: string
+  freshness?: string
+  empty_state_hint?: string | null
+}
+
+// ---------------------------------------------------------------------------
+// Reports · Live monitoring tab · "Live now"
+// ---------------------------------------------------------------------------
+//
+// Composed from two real endpoints (portal_admin.py):
+//   GET /monitoring/live  (~line 2147) → { plays_today, plays_per_min }
+//   GET /ops/today        (~line 2166) → { redemptions, plays,
+//                                          new_customers, actions }
+//
+// The legacy "p95 latency" / "error rate" tiles are intentionally
+// DROPPED — no backend source exists for them (they were hardcoded in
+// portal.html). We only surface metrics with a real data source.
+export interface MonitoringLiveResponse {
+  plays_today: number
+  plays_per_min: number
+}
+
+export interface OpsTodayResponse {
+  redemptions: number
+  plays: number
+  new_customers: number
+  actions?: unknown[]
+}
+
+/** Folded "Live now" reading. Each field is null when its source leg
+ *  failed (partial tolerance) → the view renders an em-dash. */
+export interface LiveMonitor {
+  plays_per_min: number | null
+  plays_today: number | null
+  redemptions_today: number | null
+  new_customers_today: number | null
+}
+
+// ---------------------------------------------------------------------------
 // CustomerList view · verified-customers table
 // ---------------------------------------------------------------------------
 //
