@@ -10,7 +10,6 @@
  *   3. While loading → strip renders nothing (avoid layout flicker, same as
  *      NbaCard visible-gate logic).
  *
- * Element Plus (el-card) is stubbed locally — same approach as NbaCard.spec.ts.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
@@ -23,12 +22,6 @@ vi.mock('@/api/portal-admin/overview', () => ({
 
 import StatusStrip from '../StatusStrip.vue'
 import { fetchOverview } from '@/api/portal-admin/overview'
-
-const stubs = {
-  'el-card': {
-    template: '<div data-stub="el-card"><slot name="header" /><slot /></div>'
-  }
-}
 
 describe('StatusStrip.vue', () => {
   beforeEach(() => {
@@ -45,7 +38,7 @@ describe('StatusStrip.vue', () => {
       }
     })
 
-    const wrapper = mount(StatusStrip, { global: { stubs } })
+    const wrapper = mount(StatusStrip)
     await flushPromises()
 
     // Strip root must be present
@@ -80,7 +73,7 @@ describe('StatusStrip.vue', () => {
       new Error('401 Unauthorized')
     )
 
-    const wrapper = mount(StatusStrip, { global: { stubs } })
+    const wrapper = mount(StatusStrip)
     await flushPromises()
 
     expect(wrapper.find('[data-testid="status-strip"]').exists()).toBe(false)
@@ -93,7 +86,7 @@ describe('StatusStrip.vue', () => {
       new Promise(() => {})
     )
 
-    const wrapper = mount(StatusStrip, { global: { stubs } })
+    const wrapper = mount(StatusStrip)
 
     // Before flushPromises — still loading
     expect(wrapper.find('[data-testid="status-strip"]').exists()).toBe(false)
