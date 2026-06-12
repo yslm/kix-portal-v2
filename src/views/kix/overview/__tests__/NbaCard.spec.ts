@@ -76,9 +76,11 @@ describe('NbaCard.vue', () => {
     // with {count} interpolated to 7
     expect(wrapper.text()).toContain("7 customers haven't been back")
 
-    // Upgrade row: tier upper-cased, save_cents → ¥123 (cents → integer ¥)
+    // Upgrade row: tier upper-cased, save_cents → S$123 (cents → integer SGD;
+    // pin the S$ symbol so a regression to the legacy ¥ won't slip through)
     expect(wrapper.text()).toContain('GROWTH')
     expect(wrapper.text()).toContain('123')
+    expect(wrapper.text()).toContain('S$123')
     expect(wrapper.text()).toContain('saves')
 
     // finish_setup: no count interpolation, raw copy

@@ -77,8 +77,10 @@
     },
     // Bible §1.9a · subscription = rate buy-down; the upgrade is the
     // merchant's own money-saving math, never an up-sell.
+    // Currency symbol normalized: legacy KIX_NBA_COPY shipped ¥ here, but portal-v2
+    // standardizes on S$ to match fmtSgd() and the rest of the app's currency display.
     upgrade_break_even: {
-      body: '💡 At your current acquisition spend, upgrading to {tier} saves you ¥{save}/month — it buys your per-customer cost down.',
+      body: '💡 At your current acquisition spend, upgrading to {tier} saves you S${save}/month — it buys your per-customer cost down.',
       cta: 'See the math'
     }
   }
