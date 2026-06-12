@@ -203,6 +203,10 @@ Each task = one sub-component under `src/views/kix/overview/`, composed into `Ov
 | T4.5 | a12a0e8 | style(overview): restyle metric cards + status strip to art-design-pro look   |
 | T5   | da2a1da | feat(overview): active campaigns table (native ElTable + demo mock)           |
 | T5   | 2692957 | test(overview): cover {items} normalization + assert view-all route           |
+| T6-8 | 461e2cb | feat(overview): 14-day new-customers chart + audience donut + live activity   |
+| T6-8 | (fix)   | fix(overview): AudienceDonut passes :colors (plural) to ArtRingChart          |
+
+**Overview deepening COMPLETE** — all 9 sections shipped (live-cards, setup-guide, NBA, status-strip, metric-cards, campaign-table, 14-day chart, audience donut, live activity). Each self-hides fail-soft; demo-mode visual review via `pnpm dev:mock`. The per-view deepening template is now proven end-to-end. Tests 161/161.
 
 ² T0 = off-plan fix surfaced during T2 visual review. User reported "the portal looks nothing like art-design-pro — no left sidebar." Root cause: portal-v2 IS an art-design-pro fork (the perceived gap was wrong); the sidebar was empty because art-design-pro only fills `menuStore` inside its login-gated dynamic-route flow (`beforeEach` → `handleDynamicRoutes`, guarded by `userStore.isLogin`), and KiX authenticates via its own `tokenGuard` and never sets `isLogin`. So `menuList` stayed `[]` and `art-sidebar-menu` hid the whole tree (`v-show="menuList.length > 0"`). Fix: `ensurePortalMenu()` (idempotent, frontend-static) called from `App.vue onBeforeMount`, decoupled from `isLogin`.
 
