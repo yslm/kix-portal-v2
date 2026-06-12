@@ -8,19 +8,18 @@
  *   3. Fetcher rejects (e.g. demo-mode 401) → renders nothing (self-hide).
  *   4. Fetcher resolves with empty array → renders nothing (self-hide via
  *      isReady predicate).
+ *   5. While loading (never-resolving promise) → renders nothing.
+ *   6. neutral/flat direction → NO ↑/↓ arrow glyphs in delta text.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 
 vi.mock('@/api/portal-admin/overview', () => ({
-  fetchLiveCards: vi.fn(),
-  fetchNextBestAction: vi.fn(),
-  fetchSetupGuide: vi.fn(),
-  fetchOverview: vi.fn(),
   fetchMetrics: vi.fn()
 }))
 
 import MetricCards from '../MetricCards.vue'
+import { LABELS } from '../metricLabels'
 import { fetchMetrics } from '@/api/portal-admin/overview'
 
 const MOCK_METRICS = [
@@ -52,13 +51,6 @@ const MOCK_METRICS = [
   }
 ]
 
-const LABELS = [
-  'Impressions (game views)',
-  'Plays · clicks',
-  'Verified new customers',
-  'Spent · CPA'
-]
-
 describe('MetricCards.vue', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -80,7 +72,7 @@ describe('MetricCards.vue', () => {
       const card = wrapper.find(`[data-testid="metric-card-${i}"]`)
       expect(card.exists()).toBe(true)
 
-      // Label
+      // Label — assert against the exported LABELS constant so a rename is caught
       const label = card.find('[data-testid="metric-label"]')
       expect(label.exists()).toBe(true)
       expect(label.text()).toBe(LABELS[i])
@@ -105,7 +97,7 @@ describe('MetricCards.vue', () => {
     }
   })
 
-  it('renders delta arrow ↑ for direction=up and ↓ for direction=down', async () => {
+  it('renders delta arrow ↑ for direction=up, ↓ for direction=down, and NO arrow for neutral', async () => {
     ;(fetchMetrics as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       data: MOCK_METRICS
     })
@@ -113,15 +105,21 @@ describe('MetricCards.vue', () => {
     const wrapper = mount(MetricCards)
     await flushPromises()
 
+    // card-0: direction='up' → must contain ↑
     const card0Delta = wrapper.find('[data-testid="metric-card-0"] [data-testid="metric-delta"]')
     expect(card0Delta.text()).toContain('↑')
+    expect(card0Delta.text()).not.toMatch(/↓/)
 
+    // card-1: direction='down' → must contain ↓
     const card1Delta = wrapper.find('[data-testid="metric-card-1"] [data-testid="metric-delta"]')
     expect(card1Delta.text()).toContain('↓')
+    expect(card1Delta.text()).not.toMatch(/↑/)
 
-    // neutral arrow: '·'
+    // card-2: direction='neutral' → MUST NOT contain ↑ or ↓
+    // (the separator · is present in every delta line, so toContain('·') is not
+    // a valid neutral check — use a negative assertion on the arrow glyphs instead)
     const card2Delta = wrapper.find('[data-testid="metric-card-2"] [data-testid="metric-delta"]')
-    expect(card2Delta.text()).toContain('·')
+    expect(card2Delta.text()).not.toMatch(/[↑↓]/)
   })
 
   it('applies green class for up delta and red class for down delta', async () => {
@@ -137,6 +135,19 @@ describe('MetricCards.vue', () => {
 
     const downDelta = wrapper.find('[data-testid="metric-card-1"] [data-testid="metric-delta"]')
     expect(downDelta.classes().some((c) => c.includes('red'))).toBe(true)
+  })
+
+  it('renders nothing while loading (pre-mount state)', () => {
+    // Never resolves during this test — simulates in-flight loading state
+    ;(fetchMetrics as unknown as ReturnType<typeof vi.fn>).mockReturnValueOnce(
+      new Promise(() => {})
+    )
+
+    const wrapper = mount(MetricCards)
+
+    // Before flushPromises — still loading
+    expect(wrapper.find('[data-testid="metric-cards"]').exists()).toBe(false)
+    expect(wrapper.text()).toBe('')
   })
 
   it('renders nothing (self-hides) when the fetch rejects', async () => {

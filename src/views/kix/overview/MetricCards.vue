@@ -26,23 +26,16 @@
    *   - Per-card drill-down / sparkline (separate legacy feature)
    *   - i18n keys — English-only first cut, same approach as StatusStrip /
    *     SetupGuideCard / NbaCard
+   *
+   * Note: if the backend returns more than 4 items, the extra cards render
+   * with an empty label — LABELS covers indices 0–3 only; no overflow
+   * handling is needed (scoped out, same as the legacy renderer).
    */
   import { onMounted } from 'vue'
   import { fetchMetrics } from '@/api/portal-admin/overview'
   import type { MetricCard } from '@/api/portal-admin/types'
   import { useNonCriticalCard } from '@/hooks/kix/useNonCriticalCard'
-
-  /**
-   * Fixed card labels in legacy-canonical order (portal.html lines 1350-1356).
-   * Paired with the response array by index — LABELS[i] is the label for
-   * data[i]. English-only; no new i18n keys.
-   */
-  const LABELS = [
-    'Impressions (game views)',
-    'Plays · clicks',
-    'Verified new customers',
-    'Spent · CPA'
-  ] as const
+  import { LABELS } from './metricLabels'
 
   const { data, visible, reload } = useNonCriticalCard<MetricCard[]>(
     () => fetchMetrics(),

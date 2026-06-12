@@ -1698,8 +1698,11 @@ export interface MetricCard {
   value: string | number
   /** Signed/unsigned percent delta. Render with Math.abs(). */
   delta_pct: number
-  /** Direction for arrow + colour: 'up' → green ↑, 'down' → red ↓, else neutral ·. */
-  delta_direction: 'up' | 'down' | string
+  /** Direction for arrow + colour: 'up' → green ↑, 'down' → red ↓, else neutral ·.
+   *  `(string & {})` preserves literal-type hints / intellisense for 'up'|'down'
+   *  while still accepting any arbitrary string the server may emit. Using a plain
+   *  `string` union would collapse the literals and kill autocomplete. */
+  delta_direction: 'up' | 'down' | (string & {})
   /** Short comparison label, e.g. "vs last 7d". Used in the delta line and
    *  as the sub fallback when benchmark_note is absent. */
   sub_label: string
