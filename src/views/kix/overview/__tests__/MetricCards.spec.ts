@@ -122,7 +122,7 @@ describe('MetricCards.vue', () => {
     expect(card2Delta.text()).not.toMatch(/[↑↓]/)
   })
 
-  it('applies green class for up delta and red class for down delta', async () => {
+  it('applies text-success class for up delta and text-danger class for down delta', async () => {
     ;(fetchMetrics as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       data: MOCK_METRICS
     })
@@ -130,11 +130,12 @@ describe('MetricCards.vue', () => {
     const wrapper = mount(MetricCards)
     await flushPromises()
 
+    // Restyled to art-design-pro theme tokens: text-success (up) / text-danger (down)
     const upDelta = wrapper.find('[data-testid="metric-card-0"] [data-testid="metric-delta"]')
-    expect(upDelta.classes().some((c) => c.includes('green'))).toBe(true)
+    expect(upDelta.classes()).toContain('text-success')
 
     const downDelta = wrapper.find('[data-testid="metric-card-1"] [data-testid="metric-delta"]')
-    expect(downDelta.classes().some((c) => c.includes('red'))).toBe(true)
+    expect(downDelta.classes()).toContain('text-danger')
   })
 
   it('renders nothing while loading (pre-mount state)', () => {

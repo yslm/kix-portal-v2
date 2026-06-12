@@ -36,49 +36,65 @@
 </script>
 
 <template>
-  <div
-    v-if="visible"
-    data-testid="status-strip"
-    class="flex flex-wrap gap-px bg-gray-200 rounded-xl overflow-hidden border border-gray-200"
-  >
-    <!-- WALLET -->
-    <div class="flex flex-col items-center flex-1 bg-white px-6 py-4 min-w-[120px]">
-      <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-gray-400 mb-1">
-        Wallet
-      </span>
-      <span data-testid="status-wallet" class="text-xl font-bold text-gray-900 tabular-nums">
-        {{ walletDisplay }}
-      </span>
-    </div>
+  <div v-if="visible" data-testid="status-strip" class="art-card px-6 py-4">
+    <div class="flex flex-wrap gap-6">
+      <!-- WALLET -->
+      <div class="flex items-center gap-3 flex-1 min-w-[120px]">
+        <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
+          <ArtSvgIcon icon="ri:wallet-3-line" class="text-base text-theme" />
+        </div>
+        <div class="flex flex-col">
+          <span class="text-g-600 text-xs">Wallet</span>
+          <span data-testid="status-wallet" class="text-lg font-medium tabular-nums">
+            {{ walletDisplay }}
+          </span>
+        </div>
+      </div>
 
-    <!-- NEW · 7d -->
-    <div class="flex flex-col items-center flex-1 bg-white px-6 py-4 min-w-[120px]">
-      <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-gray-400 mb-1">
-        New · 7d
-      </span>
-      <span data-testid="status-new7d" class="text-xl font-bold text-green-700 tabular-nums">
-        {{ data!.new_customers_7d }} ↑
-      </span>
-    </div>
+      <div class="w-px self-stretch bg-gray-200 dark:bg-gray-700 hidden sm:block" />
 
-    <!-- CAMPAIGNS -->
-    <div class="flex flex-col items-center flex-1 bg-white px-6 py-4 min-w-[120px]">
-      <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-gray-400 mb-1">
-        Campaigns
-      </span>
-      <span data-testid="status-campaigns" class="text-xl font-bold text-gray-900 tabular-nums">
-        {{ data!.campaigns_live }} live
-      </span>
-    </div>
+      <!-- NEW · 7d -->
+      <div class="flex items-center gap-3 flex-1 min-w-[120px]">
+        <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
+          <ArtSvgIcon icon="ri:user-add-line" class="text-base text-theme" />
+        </div>
+        <div class="flex flex-col">
+          <span class="text-g-600 text-xs">New · 7d</span>
+          <span data-testid="status-new7d" class="text-lg font-medium text-success tabular-nums">
+            {{ data!.new_customers_7d }} ↑
+          </span>
+        </div>
+      </div>
 
-    <!-- BUDGET LEFT -->
-    <div class="flex flex-col items-center flex-1 bg-white px-6 py-4 min-w-[120px]">
-      <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-gray-400 mb-1">
-        Budget Left
-      </span>
-      <span data-testid="status-runway" class="text-xl font-bold text-gray-900 tabular-nums">
-        {{ data!.runway_days }} days
-      </span>
+      <div class="w-px self-stretch bg-gray-200 dark:bg-gray-700 hidden sm:block" />
+
+      <!-- CAMPAIGNS -->
+      <div class="flex items-center gap-3 flex-1 min-w-[120px]">
+        <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
+          <ArtSvgIcon icon="ri:megaphone-line" class="text-base text-theme" />
+        </div>
+        <div class="flex flex-col">
+          <span class="text-g-600 text-xs">Campaigns</span>
+          <span data-testid="status-campaigns" class="text-lg font-medium tabular-nums">
+            {{ data!.campaigns_live }} live
+          </span>
+        </div>
+      </div>
+
+      <div class="w-px self-stretch bg-gray-200 dark:bg-gray-700 hidden sm:block" />
+
+      <!-- BUDGET LEFT -->
+      <div class="flex items-center gap-3 flex-1 min-w-[120px]">
+        <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
+          <ArtSvgIcon icon="ri:funds-line" class="text-base text-theme" />
+        </div>
+        <div class="flex flex-col">
+          <span class="text-g-600 text-xs">Budget Left</span>
+          <span data-testid="status-runway" class="text-lg font-medium tabular-nums">
+            {{ data!.runway_days }} days
+          </span>
+        </div>
+      </div>
     </div>
   </div>
 </template>

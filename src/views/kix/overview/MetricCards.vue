@@ -35,7 +35,7 @@
   import { fetchMetrics } from '@/api/portal-admin/overview'
   import type { MetricCard } from '@/api/portal-admin/types'
   import { useNonCriticalCard } from '@/hooks/kix/useNonCriticalCard'
-  import { LABELS } from './metricLabels'
+  import { LABELS, ICONS } from './metricLabels'
 
   const { data, visible, reload } = useNonCriticalCard<MetricCard[]>(
     () => fetchMetrics(),
@@ -55,14 +55,14 @@
 
   /**
    * Tailwind colour class for the delta span.
-   * up   → green  (matches legacy `.pos` + StatusStrip green-700 / NbaCard green-800)
-   * down → red    (matches legacy `.warn`)
+   * up   → text-success (theme-aware green, matches art-design-pro card-list)
+   * down → text-danger  (theme-aware red)
    * else → muted gray
    */
   function deltaClass(direction: string): string {
-    if (direction === 'up') return 'text-green-700'
-    if (direction === 'down') return 'text-red-600'
-    return 'text-gray-400'
+    if (direction === 'up') return 'text-success'
+    if (direction === 'down') return 'text-danger'
+    return 'text-g-500'
   }
 </script>
 
@@ -76,37 +76,42 @@
       v-for="(card, i) in data!"
       :key="i"
       :data-testid="`metric-card-${i}`"
-      class="bg-white border border-gray-200 rounded-xl px-6 py-4 flex flex-col gap-1"
+      class="art-card relative flex flex-col justify-center h-35 px-5"
     >
       <!-- Label -->
-      <span
-        data-testid="metric-label"
-        class="text-[10.5px] font-extrabold uppercase tracking-wider text-gray-400"
-      >
+      <span data-testid="metric-label" class="text-g-700 text-sm">
         {{ LABELS[i] }}
       </span>
 
-      <!-- Value — pre-formatted by server; render as-is -->
+      <!-- Value — pre-formatted by server; render as-is (not ArtCountTo — values
+           are strings like "S$1,800 · S$8.41" that can't be animated numerically) -->
       <span
         data-testid="metric-value"
-        class="text-xl font-bold text-gray-900 tabular-nums leading-tight"
+        class="text-[26px] font-medium mt-2 tabular-nums leading-tight"
       >
         {{ card.value }}
       </span>
 
-      <!-- Delta: arrow + abs(pct) + sub_label -->
-      <span
-        data-testid="metric-delta"
-        class="text-xs font-semibold tabular-nums"
-        :class="deltaClass(card.delta_direction)"
-      >
-        {{ arrow(card.delta_direction) }}{{ Math.abs(card.delta_pct) }}% · {{ card.sub_label }}
-      </span>
+      <!-- Delta row: muted prefix (sub_label) + colored signed delta -->
+      <div class="flex-c mt-1">
+        <span
+          data-testid="metric-delta"
+          class="text-xs font-semibold tabular-nums"
+          :class="deltaClass(card.delta_direction)"
+        >
+          {{ arrow(card.delta_direction) }}{{ Math.abs(card.delta_pct) }}% · {{ card.sub_label }}
+        </span>
+      </div>
 
-      <!-- Sub: benchmark_note ?? sub_label -->
-      <span data-testid="metric-sub" class="text-[11px] text-gray-400 leading-snug">
+      <!-- Sub: benchmark_note ?? sub_label — small context line -->
+      <span data-testid="metric-sub" class="text-xs text-g-500 mt-0.5 leading-snug">
         {{ card.benchmark_note ?? card.sub_label }}
       </span>
+
+      <!-- Icon square — absolute right, theme-colored, mirrors card-list.vue anatomy -->
+      <div class="absolute top-0 bottom-0 right-5 m-auto size-12.5 rounded-xl flex-cc bg-theme/10">
+        <ArtSvgIcon :icon="ICONS[i] ?? 'ri:bar-chart-line'" class="text-xl text-theme" />
+      </div>
     </article>
   </div>
 </template>
