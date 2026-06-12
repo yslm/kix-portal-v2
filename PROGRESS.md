@@ -174,7 +174,76 @@ Original spec had 19 P2 views; audit recommended subtraction:
 - README quickstart + DEPLOY.md cutover SOP shipped
 - Plan 7 cutover documented; held pending user approval
 
-## Plan 7: Production cutover (HELD)
+## Week 7: Overview deepening (in progress)
+
+**Status: ACTIVE — T0/T1/T2 of 7 done; T2 pending user visual review when session resumes**
+
+Plan file: `kix-platform/docs/superpowers/plans/2026-06-11-portal-v2-week7-overview-deepening.md`
+
+Plan 7 was originally "Production cutover (HELD)" (now moved to § Future below). After Plan 6 user visual review, the cadence was redefined: each view needs MULTIPLE sub-sections, not just 1 thin slice. Overview goes first as the pacing template — if 1-week works for 9 sections of Overview, the same per-view deepening applies to the other 17 views in Plan 8+.
+
+Each task = one sub-component under `src/views/kix/overview/`, composed into `Overview.vue`. User does visual review after each task; subagent-driven-development cadence (implementer → spec reviewer → code-quality reviewer → fix loop → visual review).
+
+### Commits (this stream)
+
+| Task | Commit  | Subject                                                                       |
+| ---- | ------- | ----------------------------------------------------------------------------- |
+| T1   | 2f9a1d4 | feat(overview): setup guide card                                              |
+| T0¹  | 3f76d0e | fix(http): kixHttp 401 honors ?brand= demo bypass (symmetric with tokenGuard) |
+| T0¹  | bd718ae | refactor(http): tighten kixHttp 401 demo-bypass JSDoc + harden test isolation |
+| T2   | 520cce2 | feat(overview): NBA suggested next move card                                  |
+| T2   | 50c4606 | fix(overview): NBA card uses S$ for SGD (was ¥ from legacy)                   |
+
+¹ T0 = off-plan hotfix. T1 SetupGuideCard was the first call into `/api/v1/portal-admin/*` from a demo-reachable view, exposing a Plan 1 latent asymmetry: `tokenGuard` honored `?brand=` bypass, but `kixHttp`'s 401 interceptor did NOT — so a 401 from any portal-admin endpoint kicked demo users back to signin before the calling component's try/catch could swallow it. Fixed before T2 because T2-T7 all hit portal-admin endpoints; without T0 every one would re-break demo mode.
+
+### Result so far
+
+- Tests: 122/122 vitest (was 110 after Week 6; +1 tokenGuard hotfix d66f92e, +3 kixHttp demo branch, +5 SetupGuideCard from T1, +5 NbaCard from T2 — also passes `--sequence.shuffle` for kixHttp.spec).
+- TS: zero new errors from this stream (pre-existing 59 vue-tsc SFC module errors unchanged; +1 trivial structural error for the new `.vue` file, same shape as every existing v2 .vue).
+- Demo mode (`?brand=` BEFORE the hash) verified end-to-end at the kixHttp layer via unit tests: tokenGuard pass → cards mount → 401 → kixHttp rejects without redirect → card try/catch swallows → silent hide. Setup guide and NBA cards both fail-soft.
+- Push state: **last pushed = 2f9a1d4 (T1).** Four commits unpushed locally: 3f76d0e, bd718ae, 520cce2, 50c4606. Push when convenient.
+
+### Next: visual review T2 + dispatch T3
+
+When session resumes:
+
+1. **First — visual review T2** (Task #4 in the TodoWrite stream): `cd /Users/yangshenlin/work/gimifacation-paltorm/kix-portal-v2 && pnpm dev` → open `http://localhost:3006/portal/?brand=demo` (note: `?brand=demo` MUST sit BEFORE the hash — see § Demo-mode contract). With no token, both Setup guide and NBA cards should silently hide (401 fail-soft). To eyeball the NBA card's actual rendering, either (a) sign into a real KiX env to get a token, (b) ask the controller to write a vite mock middleware for the two endpoints, or (c) skim `src/views/kix/overview/__tests__/NbaCard.spec.ts` line 48-95 for the rendered text snapshots.
+2. **Then — T3 Status strip** (Plan 7 line 27/204): `src/views/kix/overview/StatusStrip.vue` + `/api/v1/portal-admin/overview` (Reports leg). Wallet balance + 7-day new customers + active campaigns + budget used. Layout target: TOP row of Overview (above the SetupGuide/NBA middle row). Same per-task template as T1/T2.
+
+### Demo-mode contract (carry forward — important for T3-T7)
+
+`?brand=demo` MUST sit BEFORE the hash: `host/portal/?brand=demo#/overview`. The form `host/portal/#/overview?brand=demo` survives `tokenGuard` (which can also read vue-router's parsed `to.query.brand`) but NOT `kixHttp`'s 401 path (which only has `location.search`). This asymmetry is documented in the JSDoc above `kixHttp`'s response interceptor (commit bd718ae). Don't try to "fix" by reading the hash inside the interceptor — legacy portal.html's contract is exactly this, and the test at `src/utils/http/__tests__/kixHttp.spec.ts` pins both halves.
+
+### Deferred follow-ups (NOT blocking T3, but reduce future surprises)
+
+1. **Currency normalization audit** — T2 reviewer found `¥` in legacy `KIX_NBA_COPY.upgrade_break_even.body`, fixed locally in v2. Before T3-T7 implementation, sweep `kix-platform/landing/portal.html` for other `¥` / hardcoded-currency strings so they don't quietly propagate into v2 sub-components. Cheapest moment is during each section's audit step.
+2. **Extract `getKixToken()` helper** — `localStorage.getItem('kix_token') || localStorage.getItem('kix_portal_token')` is now in 3 places (`kixHttp` request, `kixHttp` response, `tokenGuard`). Rule-of-three triggered. 2-line helper, low risk, do anytime.
+3. **Card `handleCta` fallback divergence** — `SetupGuideCard` returns early when `routeFor(view)` is null; `NbaCard` falls back to `/overview`. Align before T4 (probably toward NbaCard's fallback since the CTA is always rendered, never conditionally).
+4. **`Object.prototype.hasOwnProperty.call(NBA_COPY, a.id)` → `a.id in NBA_COPY`** — janitorial. Defensive form is unnecessary for static literal keys; legacy `KIX_NBA_COPY[a.id]` truthy check is closer to the reference.
+5. **NbaCard test #1 splits + add `view: undefined` coverage** — janitorial.
+6. **art-design-pro `axiosInstance` (`src/utils/http/index.ts`) has the same 401 asymmetry as kixHttp had before T0** — portal-admin doesn't route through it today, so non-blocking. Harden symmetrically if a future code path under demo mode ever uses it.
+7. **`?brand=` in hash branch in kixHttp** — UNSUPPORTED on purpose (no Route context in interceptor). If a UX need surfaces ("merchant pasted a hash-internal demo link and got kicked"), revisit by passing `to.query` through to a request-config flag, NOT by parsing the hash inside the interceptor.
+
+### Quick command reference
+
+```bash
+cd /Users/yangshenlin/work/gimifacation-paltorm/kix-portal-v2
+
+pnpm dev                                    # Vite dev server on :3006
+pnpm vitest run                             # full suite (expect 122/122)
+pnpm vitest run --sequence.shuffle          # confirm no test-order coupling
+pnpm tsc --noEmit                           # expect ~60 pre-existing errors, ZERO new
+pnpm build                                  # production bundle to dist/
+
+git log --oneline -10                       # see commit stream
+git push                                    # push the 4 unpushed local commits
+```
+
+---
+
+## Future: Production cutover (HELD — deferred until view deepening complete)
+
+Originally Plan 7. Now deferred to after all view-deepening passes finish (Week 7 Overview + Plan 8+ for the remaining 17 views) AND user signs off on visual parity per view.
 
 Requires user approval. See `DEPLOY.md` for full SOP. Summary:
 
