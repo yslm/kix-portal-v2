@@ -23,6 +23,7 @@
   import type { LiveCampaignCard } from '@/api/portal-admin/types'
   import { fmtSgd } from '@/utils/format/currency'
   import { resolveBrandId } from '@/utils/kix/resolveBrandId'
+  import MetricCards from './overview/MetricCards.vue'
   import NbaCard from './overview/NbaCard.vue'
   import SetupGuideCard from './overview/SetupGuideCard.vue'
   import StatusStrip from './overview/StatusStrip.vue'
@@ -64,6 +65,12 @@
          runway). Self-hides on loading or error — non-critical card, same
          pattern as NbaCard. Sits ABOVE the SetupGuide/NBA pair. -->
     <StatusStrip />
+
+    <!-- KPI metric card band: Impressions / Plays · clicks / Verified new
+         customers / Spent · CPA. Sits directly below StatusStrip, above the
+         SetupGuide/NBA pair — mirrors legacy portal.html layout (lines
+         1350-1356). Self-hides on loading / error / empty array. -->
+    <MetricCards />
 
     <!-- Middle row 1: onboarding pair · Setup guide + Suggested next move.
          Both cards self-hide on empty / error, so the grid collapses

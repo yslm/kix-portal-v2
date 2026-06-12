@@ -1667,3 +1667,42 @@ export interface NextBestActionResponse {
   brand_id?: string
   actions: NextBestAction[]
 }
+
+// ---------------------------------------------------------------------------
+// Overview view · KPI metric cards row
+// ---------------------------------------------------------------------------
+//
+// Source: kix-platform/landing/portal.html · `kixLoadMetrics()` (~line 3551)
+// + metric card markup at lines 1350-1356.
+// Endpoint: GET /api/v1/portal-admin/metrics
+//
+// Brand is inferred server-side from the JWT (`get_current_brand` dependency)
+// — no `?brand=` / `?brand_id=` query parameter. Same pattern as
+// `fetchOverview()` / `fetchNextBestAction()`.
+//
+// Response shape: BARE ARRAY `MetricCard[]` (FastAPI `response_model=list[MetricCard]`).
+// The four cards correspond by index to the four fixed labels:
+//   0 → Impressions (game views)
+//   1 → Plays · clicks
+//   2 → Verified new customers
+//   3 → Spent · CPA
+//
+// The server pre-formats all display values — `value` is rendered as-is.
+// `delta_pct` is already the percent magnitude; render with Math.abs() and
+// the directional arrow. `benchmark_note` is optional; falls back to
+// `sub_label` when absent.
+
+export interface MetricCard {
+  /** Pre-formatted display value from the server (e.g. "9,120", "S$1,800 · S$8.41").
+   *  Render as-is — do NOT run fmtSgd() on this. */
+  value: string | number
+  /** Signed/unsigned percent delta. Render with Math.abs(). */
+  delta_pct: number
+  /** Direction for arrow + colour: 'up' → green ↑, 'down' → red ↓, else neutral ·. */
+  delta_direction: 'up' | 'down' | string
+  /** Short comparison label, e.g. "vs last 7d". Used in the delta line and
+   *  as the sub fallback when benchmark_note is absent. */
+  sub_label: string
+  /** Optional benchmark annotation. Falls back to sub_label when absent. */
+  benchmark_note?: string
+}

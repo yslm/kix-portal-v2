@@ -1,6 +1,7 @@
 import { http } from './http'
 import type {
   LiveCardsResponse,
+  MetricCard,
   NextBestActionResponse,
   OverviewResponse,
   SetupGuideResponse
@@ -89,3 +90,20 @@ export const fetchNextBestAction = () =>
  * Reference legacy fetcher: `kixLoadOverview()` at portal.html ~line 3490.
  */
 export const fetchOverview = () => http.get<OverviewResponse>('/api/v1/portal-admin/overview')
+
+/**
+ * GET /api/v1/portal-admin/metrics
+ *
+ * Powers the MetricCards component — the TikTok-Ads-Manager-style 4-metric
+ * KPI card row directly below the StatusStrip on the Overview view. Brand is
+ * inferred server-side from the JWT (`get_current_brand` dependency) —
+ * no `?brand=` / `?brand_id=` query param. Same pattern as
+ * `fetchOverview()` / `fetchNextBestAction()`.
+ *
+ * Response: BARE ARRAY `MetricCard[]` (FastAPI `response_model=list[MetricCard]`).
+ * `res.data` IS the array. The four items correspond by index to the fixed
+ * labels: Impressions / Plays · clicks / Verified new customers / Spent · CPA.
+ *
+ * Reference legacy fetcher: `kixLoadMetrics()` at portal.html ~line 3551.
+ */
+export const fetchMetrics = () => http.get<MetricCard[]>('/api/v1/portal-admin/metrics')
