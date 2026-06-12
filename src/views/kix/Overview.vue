@@ -23,6 +23,7 @@
   import type { LiveCampaignCard } from '@/api/portal-admin/types'
   import { fmtSgd } from '@/utils/format/currency'
   import { resolveBrandId } from '@/utils/kix/resolveBrandId'
+  import CampaignTable from './overview/CampaignTable.vue'
   import MetricCards from './overview/MetricCards.vue'
   import NbaCard from './overview/NbaCard.vue'
   import SetupGuideCard from './overview/SetupGuideCard.vue'
@@ -80,6 +81,11 @@
       <SetupGuideCard />
       <NbaCard />
     </div>
+
+    <!-- Active campaigns table — self-hides on empty/error/loading.
+         Placed here between the SetupGuide/NBA pair and the live-cards
+         grid, matching the legacy portal.html order (table above cards). -->
+    <CampaignTable />
 
     <!-- Live campaigns grid -->
     <section class="space-y-3">

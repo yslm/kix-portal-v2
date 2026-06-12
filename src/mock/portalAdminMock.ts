@@ -65,6 +65,54 @@ const MOCKS: Record<string, unknown> = {
       { id: 'weekend_pack', view: 'builder' }
     ]
   },
+  // Bare array — mirrors FastAPI response_model=list[Campaign].
+  // Four rows with varied status values that StatusBadge maps to coloured pills.
+  '/api/v1/portal-admin/campaigns': [
+    {
+      id: 'demo-c-001',
+      name: '茶物语·周末拉新',
+      status: 'active',
+      objective: 'Acquisition',
+      spend_str: 'S$28.5',
+      impressions: 3200,
+      conversions: 18,
+      cpa_str: 'S$1.58',
+      ctr_pct: 3.2
+    },
+    {
+      id: 'demo-c-002',
+      name: 'Lunch spin',
+      status: 'active',
+      objective: 'Retention',
+      spend_str: 'S$45.0',
+      impressions: 1500,
+      conversions: 9,
+      cpa_str: 'S$5.00',
+      ctr_pct: '2.1%'
+    },
+    {
+      id: 'demo-c-003',
+      name: 'Payday blast',
+      status: 'paused',
+      objective: 'Awareness',
+      spend_str: 'S$12.0',
+      impressions: 820,
+      conversions: 4,
+      cpa_str: 'S$3.00',
+      ctr_pct: 1.8
+    },
+    {
+      id: 'demo-c-004',
+      name: 'Mystery box',
+      status: 'ended',
+      objective: 'Acquisition',
+      spend_str: 'S$96.0',
+      impressions: 8100,
+      conversions: 52,
+      cpa_str: 'S$1.85',
+      ctr_pct: '4.5%'
+    }
+  ],
   '/api/v1/portal-admin/setup-guide': {
     brand_id: 'demo_brand',
     steps: [
