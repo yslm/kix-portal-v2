@@ -9,6 +9,7 @@ import AutoImport from 'unplugin-auto-import/vite'
 import ElementPlus from 'unplugin-element-plus/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import tailwindcss from '@tailwindcss/vite'
+import { portalAdminMock } from './src/mock/portalAdminMock'
 // import { visualizer } from 'rollup-plugin-visualizer'
 
 export default ({ mode }: { mode: string }) => {
@@ -67,6 +68,7 @@ export default ({ mode }: { mode: string }) => {
       }
     },
     plugins: [
+      portalAdminMock(),
       vue(),
       tailwindcss(),
       // 自动按需导入 API
