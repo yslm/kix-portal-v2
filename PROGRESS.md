@@ -197,6 +197,8 @@ Each task = one sub-component under `src/views/kix/overview/`, composed into `Ov
 | T3   | 6fc11a4 | feat(overview): status strip — wallet / new-7d / live campaigns / runway      |
 | T3   | 15a565e | test(overview): drop inert el-card stub from StatusStrip spec                 |
 | T3.5 | c2e1660 | refactor(overview): extract useNonCriticalCard — dedupe 3-card load pattern   |
+| T4   | c04c059 | feat(overview): metric cards — impressions / plays / verified-new / spent-CPA |
+| T4   | 8a677f2 | test(overview): harden MetricCards spec + tighten delta_direction type        |
 
 ² T0 = off-plan fix surfaced during T2 visual review. User reported "the portal looks nothing like art-design-pro — no left sidebar." Root cause: portal-v2 IS an art-design-pro fork (the perceived gap was wrong); the sidebar was empty because art-design-pro only fills `menuStore` inside its login-gated dynamic-route flow (`beforeEach` → `handleDynamicRoutes`, guarded by `userStore.isLogin`), and KiX authenticates via its own `tokenGuard` and never sets `isLogin`. So `menuList` stayed `[]` and `art-sidebar-menu` hid the whole tree (`v-show="menuList.length > 0"`). Fix: `ensurePortalMenu()` (idempotent, frontend-static) called from `App.vue onBeforeMount`, decoupled from `isLogin`.
 
