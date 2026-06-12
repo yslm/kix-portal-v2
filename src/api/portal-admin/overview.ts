@@ -1,5 +1,10 @@
 import { http } from './http'
-import type { LiveCardsResponse, NextBestActionResponse, SetupGuideResponse } from './types'
+import type {
+  LiveCardsResponse,
+  NextBestActionResponse,
+  OverviewResponse,
+  SetupGuideResponse
+} from './types'
 
 /**
  * Portal admin · Overview view API.
@@ -68,3 +73,19 @@ export const fetchSetupGuide = () =>
  */
 export const fetchNextBestAction = () =>
   http.get<NextBestActionResponse>('/api/v1/portal-admin/next-best-action')
+
+/**
+ * GET /api/v1/portal-admin/overview
+ *
+ * Powers the StatusStrip component — the 4-metric top row of the Overview
+ * view (wallet balance, new customers 7d, live campaigns, budget runway).
+ * Brand is inferred server-side from the JWT (`get_current_brand` dependency)
+ * — no `?brand=` / `?brand_id=` query param. Same pattern as
+ * `fetchSetupGuide()` / `fetchNextBestAction()`.
+ *
+ * Response (`OverviewResponse`):
+ *   { wallet_sgd, new_customers_7d, campaigns_live, runway_days }
+ *
+ * Reference legacy fetcher: `kixLoadOverview()` at portal.html ~line 3490.
+ */
+export const fetchOverview = () => http.get<OverviewResponse>('/api/v1/portal-admin/overview')

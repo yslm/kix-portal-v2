@@ -25,6 +25,7 @@
   import { resolveBrandId } from '@/utils/kix/resolveBrandId'
   import NbaCard from './overview/NbaCard.vue'
   import SetupGuideCard from './overview/SetupGuideCard.vue'
+  import StatusStrip from './overview/StatusStrip.vue'
 
   const { t } = useI18n()
 
@@ -58,6 +59,11 @@
       <h1 class="text-2xl font-bold">{{ pageTitle }}</h1>
       <p class="text-sm text-gray-500 mt-1">{{ pageSubtitle }}</p>
     </header>
+
+    <!-- Top row: 4-metric status strip (wallet / new-7d / live campaigns /
+         runway). Self-hides on loading or error — non-critical card, same
+         pattern as NbaCard. Sits ABOVE the SetupGuide/NBA pair. -->
+    <StatusStrip />
 
     <!-- Middle row 1: onboarding pair · Setup guide + Suggested next move.
          Both cards self-hide on empty / error, so the grid collapses

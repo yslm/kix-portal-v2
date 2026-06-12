@@ -314,6 +314,33 @@ export interface StatusStrip {
   new_customers?: number
 }
 
+/**
+ * Wire response for GET /api/v1/portal-admin/overview.
+ *
+ * Powers the StatusStrip component (T3 — four-metric top row of the
+ * Overview view). Brand is inferred server-side from the JWT —
+ * no `?brand=` / `?brand_id=` query param, identical pattern to
+ * `fetchSetupGuide()` / `fetchNextBestAction()`.
+ *
+ * Source: kix-platform/landing/portal.html · `kixLoadOverview()`
+ * (~line 3490). Field semantics mirror the legacy renderer at
+ * portal.html line 1335-1341.
+ *
+ * The richer `StatusStrip` interface above (Plan 4 T2 / Reports view)
+ * is a superset of this shape — these four fields are the minimal
+ * contract the Overview strip needs for its first cut.
+ */
+export interface OverviewResponse {
+  /** Wallet credit balance in dollars (NOT cents). Render as fmtSgd(wallet_sgd). */
+  wallet_sgd: number
+  /** Count of verified-new customers in the last 7 days. */
+  new_customers_7d: number
+  /** Count of live campaigns. */
+  campaigns_live: number
+  /** Days of budget runway left at current burn rate. */
+  runway_days: number
+}
+
 export interface RedemptionsTodayResponse {
   count: number
   value_str?: string
