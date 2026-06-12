@@ -288,6 +288,53 @@ git push                                    # push the 4 unpushed local commits
 
 ---
 
+## Week 8: Reports deepening (2026-06-13)
+
+**Status: IN PROGRESS — 3 of the legacy Reports sub-sections shipped, reviewed (headless), committed. First application of the Overview per-view deepening template to a second view; it transfers cleanly.**
+
+Picked Reports as the next view (highest reuse of the Overview chart/table/card components; no known field wrinkles). The legacy `<section id="view-reports">` (portal.html lines 1960-2082) had an already-shipped Owner-summary card + 3 advanced tabs. This session ported the sub-sections that have a REAL backend source — verified against `kix-platform/app/routers/portal_admin.py` before writing any fetcher.
+
+### Commit
+
+- c85109d feat(reports): deepen Reports — top-campaigns / funnel / live-monitor
+
+### Shipped sub-sections (all under `src/views/kix/reports/`, self-hiding via `useNonCriticalCard`)
+
+| Section | Component | Endpoint (real) | Notes |
+| --- | --- | --- | --- |
+| Performance · Top campaigns by ROAS | `TopCampaignsTable.vue` | `GET /reports/top-campaigns` | native ElTable in `.art-card`; Campaign·Spend·Conv·ROAS. Real-brand nulls → em-dash (attribution-not-ready is honest) |
+| Engagement · funnel | `FunnelChart.vue` | `GET /reports/funnel?source=true` | 6-step horizontal bar funnel + per-step conversion %. Hides until a non-zero funnel exists |
+| Live monitoring · "Live now" | `LiveMonitor.vue` | composed `fetchLiveMonitor()` = `/monitoring/live` + `/ops/today` | partial-tolerant fan-out (`.catch→null` per leg). 4 tiles: Plays/min · Plays today · Redemptions today · New customers today |
+
+### NO-FAKE-DATA decisions (verified against backend before building)
+
+- **KPI grid** (Total spend / Conversions / Avg CPA / ROAS): legacy HARDCODED these; `GET /reports/sources` returns only data-provenance metadata, NOT values. No dedicated endpoint → **NOT shipped**. Reuse Overview's `/metrics` if wanted later.
+- **Heat-by-hour heatmap**: legacy was a pure client-side `Math.sin` decoration, no backend → **DROPPED**.
+- **Live-monitoring p95-latency / error-rate tiles**: legacy hardcoded; `/monitoring/live` only returns `{plays_today, plays_per_min}` → **DROPPED**, kept the 2 real metrics + folded in `/ops/today`.
+
+### Result
+
+- Tests **180/180** (was 161 at session start; +19: 5 TopCampaigns + 6 Funnel + 4 LiveMonitor.vue + 4 fetchLiveMonitor api).
+- tsc: zero new production errors (+3 vs baseline 66 = three new `.vue` spec module-resolution noise, per the documented pattern).
+- Headless Playwright visual review (`?brand=demo#/reports`) confirmed all 4 sections render (owner card + 3 new); screenshot looked native to art-design-pro.
+- Demo payloads added to `portalAdminMock.ts` for every new endpoint + the two previously-missing owner-card legs (`/redemptions/today`, `/customers/rfm-summary`) so the owner card now shows 63/24/40 under `dev:mock`.
+
+### Reports — still deferred (carry forward)
+
+- **Tabs vs stacked**: legacy Reports used 3 tabs (Performance/Engagement/Live monitoring) + a simple/advanced mode toggle. v2 currently STACKS all sections vertically (matching Overview). If the page feels long once fully populated, wrap in `ElTabs` in the styling pass — but stacked + self-hiding works fine today.
+- **Export CSV** button (advanced-mode only; `GET /reports/export.csv` exists) — not ported.
+- **Attribution report** (`GET /reports/attribution`) — separate legacy feature, not in the original Reports section scope.
+- **Owner-report "reading" plain-language line** (`#own-reading`) — still deferred from the original Reports T2.
+
+### ▶ RESUME HERE (Reports track)
+
+Reports has 3 solid new sections + the owner card. Next candidates by the same template + remaining-data audit:
+
+- **Next view to deepen**: Campaigns / Games / Builder / Customers are still 1-thin-section. Apply the same template. (Reconcile `Campaigns.vue`'s `spend_sgd`-first vs the new tables' `spend_str`-first during the eventual styling pass — noted in Week 7.)
+- **(B) Batched styling pass** still pending (user: "后续一起来改样式") — now has Overview + Reports deepened to unify together.
+
+---
+
 ## Future: Production cutover (HELD — deferred until view deepening complete)
 
 Originally Plan 7. Now deferred to after all view-deepening passes finish (Week 7 Overview + Plan 8+ for the remaining 17 views) AND user signs off on visual parity per view.
