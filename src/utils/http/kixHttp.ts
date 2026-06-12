@@ -32,16 +32,16 @@ kixHttp.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 /**
  * Response interceptor: pass through on success; redirect on 401.
  *
- * Symmetric with the route-level demo bypass in `src/router/guards/tokenGuard.ts`
- * (see the `hasBrand` line). The route guard lets anonymous traffic through when
- * `?brand=` is present in `location.search`; without the same check here, any 401
- * from a demo-reachable view (e.g. /overview → /api/v1/portal-admin/setup-guide)
- * would slam the user back to /landing/signin.html before the calling component
- * could swallow the error, silently breaking the demo gate.
+ * Intent-symmetric with `tokenGuard.ts` demo bypass: without the brand check
+ * here, a 401 from a demo-reachable view (e.g. /overview → setup-guide) would
+ * slam the user to /landing/signin.html before the caller could swallow it,
+ * silently breaking the demo gate. Token-expired (token + 401) still redirects.
  *
- * Rule: redirect on 401 unless the caller is anonymous AND the demo brand bypass
- * is active. Token-expired (token present + 401) still redirects regardless of
- * the brand bypass — that path is a real session expiry, not a demo visit.
+ * NOT byte-identical to tokenGuard: that guard ORs `to.query.brand` to cover
+ * hash-mode routing; we have no Route object and can only read `location.search`.
+ * Contract (same as legacy portal.html): demo URLs MUST put `?brand=` BEFORE
+ * the hash, e.g. `host/portal/?brand=demo#/overview`. The form
+ * `host/portal/#/overview?brand=demo` survives tokenGuard but NOT this 401 path.
  */
 kixHttp.interceptors.response.use(
   (response) => response,

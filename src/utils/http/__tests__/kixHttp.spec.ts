@@ -8,6 +8,10 @@ describe('kixHttp', () => {
   beforeEach(() => {
     mock = new MockAdapter(kixHttp)
     localStorage.clear()
+    Object.defineProperty(window, 'location', {
+      writable: true,
+      value: { pathname: '/', search: '', hash: '', replace: vi.fn() }
+    })
   })
 
   it('attaches Bearer token from kix_token', async () => {
@@ -44,11 +48,7 @@ describe('kixHttp', () => {
 
   it('on 401, redirects to signin and rejects', async () => {
     localStorage.setItem('kix_token', 'expired')
-    const replaceSpy = vi.fn()
-    Object.defineProperty(window, 'location', {
-      writable: true,
-      value: { pathname: '/portal/', search: '', hash: '', replace: replaceSpy }
-    })
+    const replaceSpy = window.location.replace as ReturnType<typeof vi.fn>
     mock.onGet('/api/v1/secret').reply(401, { detail: 'expired' })
     await expect(kixHttp.get('/api/v1/secret')).rejects.toThrow()
     expect(replaceSpy).toHaveBeenCalledWith(
@@ -82,11 +82,7 @@ describe('kixHttp', () => {
   })
 
   it('on 401 with no token and no brand bypass, redirects (anonymous, no escape hatch)', async () => {
-    const replaceSpy = vi.fn()
-    Object.defineProperty(window, 'location', {
-      writable: true,
-      value: { pathname: '/portal/', search: '', hash: '', replace: replaceSpy }
-    })
+    const replaceSpy = window.location.replace as ReturnType<typeof vi.fn>
     mock.onGet('/api/v1/secret').reply(401, { detail: 'unauthorized' })
     await expect(kixHttp.get('/api/v1/secret')).rejects.toThrow()
     expect(replaceSpy).toHaveBeenCalledWith(
