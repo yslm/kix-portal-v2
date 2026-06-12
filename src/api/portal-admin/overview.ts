@@ -1,5 +1,5 @@
 import { http } from './http'
-import type { LiveCardsResponse, SetupGuideResponse } from './types'
+import type { LiveCardsResponse, NextBestActionResponse, SetupGuideResponse } from './types'
 
 /**
  * Portal admin · Overview view API.
@@ -46,3 +46,25 @@ export const fetchLiveCards = (brandId?: string) =>
  */
 export const fetchSetupGuide = () =>
   http.get<SetupGuideResponse>('/api/v1/portal-admin/setup-guide')
+
+/**
+ * GET /api/v1/portal-admin/next-best-action
+ *
+ * Powers the V2.16 "Suggested next move" (NBA) card on the Overview view
+ * (`#nba-card` in the legacy portal.html, line 1320). Brand is inferred
+ * server-side from the JWT (`get_current_brand` dependency at
+ * portal_admin.py line 3106) — no `?brand=` query parameter. Same pattern
+ * as `fetchSetupGuide()` / `listCustomers()` / `listAudiences()`.
+ *
+ * Response (`NextBestActionResponse`):
+ *   { brand_id, actions: NextBestAction[] }
+ *
+ * The server caps at 3 actions (portal_admin.py line 3262). Each action
+ * row: `{ id, view?, count?, to_tier?, save_cents?, signal? }` — see
+ * NextBestAction typedef for the canonical ids, view-id mapping, and which
+ * fields are populated for which id.
+ *
+ * Reference legacy fetcher: `kixLoadNBA()` at portal.html line 4170-4197.
+ */
+export const fetchNextBestAction = () =>
+  http.get<NextBestActionResponse>('/api/v1/portal-admin/next-best-action')

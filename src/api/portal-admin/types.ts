@@ -1541,3 +1541,102 @@ export interface SetupGuideResponse {
   complete: boolean
   source?: string
 }
+
+// ---------------------------------------------------------------------------
+// Overview view · NBA "Suggested next move" card
+// ---------------------------------------------------------------------------
+//
+// Source: kix-platform/landing/portal.html · `#nba-card` (line 1317-1323) +
+// the legacy fetcher `kixLoadNBA()` (~line 4170) + the action copy table
+// `KIX_NBA_COPY` (~line 4159-4169).
+//
+// Wire endpoint:
+//   GET /api/v1/portal-admin/next-best-action
+//     → { brand_id: string, actions: NextBestAction[] }
+//
+// Brand is inferred from the JWT (`get_current_brand` dependency at
+// portal_admin.py line 3106). NO `?brand=` query parameter — same pattern
+// as `fetchSetupGuide()` / `listCustomers()` / `listAudiences()`.
+//
+// The backend caps the response at three actions (`actions[:3]` at
+// portal_admin.py line 3262). Each action carries the signal that
+// justified it, so the card can never lie — "every suggestion backed by
+// a real signal" (V2.16 design comment at portal_admin.py line 3100-3102).
+//
+// Per-action wire fields (portal_admin.py line 3169-3261):
+//   - id:         canonical action identifier — drives the body/CTA copy
+//                 lookup in `NBA_COPY`. Closed-world enum on the server:
+//                 'upgrade_break_even' | 'finish_setup' | 'winback_at_risk'
+//                 | 'first_message_leads' | 'weekend_pack'
+//                 | 'no_plays_print_qr' | 'all_good'. Unknown ids are
+//                 dropped by the legacy renderer (line 4183 filters by
+//                 KIX_NBA_COPY membership); v2 mirrors that.
+//   - view:      legacy view-id the CTA jumped to via `kixSwitchView()`.
+//                Maps onto v2 route paths: 'overview' → '/overview',
+//                'messages' → '/messages', 'builder' → '/builder',
+//                'vouchers' → '/vouchers', 'billing' → '/billing',
+//                'reports' → '/reports'. Closed enum on the server, but
+//                typed as string-union for forward-compat.
+//   - count?:    integer · context-dependent. Populated for
+//                'winback_at_risk' (idle members 14-45d), 'first_message_leads'
+//                (leads never messaged), 'all_good' (plays in 7d). Absent
+//                on 'finish_setup' / 'weekend_pack' / 'no_plays_print_qr' /
+//                'upgrade_break_even'.
+//   - to_tier?:  string · target tier name for 'upgrade_break_even' only.
+//                Lower-cased on the wire ('growth', 'scale', …) — the
+//                legacy renderer upper-cases for display.
+//   - save_cents?: integer · monthly savings in cents for 'upgrade_break_even'
+//                  only. Bible §1.9a · subscription = rate buy-down — surfaced
+//                  ONLY when net_save > 0 (line 3243 server-side gate).
+//   - signal:    human-readable trace ("3 members idle 14-45d", "spend=120c
+//                · growth saves 50c/mo after ¥10 fee"). Typed for the
+//                deferred "why am I seeing this?" tooltip; not rendered
+//                in the first cut.
+//
+// Plan 7 T2 ports: page header eyebrow + up to three suggestion rows with
+// the body copy verbatim from KIX_NBA_COPY (English-first; i18n hook-up
+// is a follow-up slice). DEFERRED (legacy still owns these surfaces):
+//   - i18n keys (`portal.nba.<id>` / `portal.nba.<id>_cta` from KIX_NBA_COPY).
+//   - "Why am I seeing this?" tooltip wired to `action.signal`.
+//   - Dismissal / snooze controls — the legacy card has none either.
+
+export type NextBestActionId =
+  | 'upgrade_break_even'
+  | 'finish_setup'
+  | 'winback_at_risk'
+  | 'first_message_leads'
+  | 'weekend_pack'
+  | 'no_plays_print_qr'
+  | 'all_good'
+  | string
+
+/**
+ * Legacy view-id strings emitted by the backend in `action.view`. Maps
+ * to v2 router paths inside the NbaCard component.
+ */
+export type NextBestActionView =
+  | 'overview'
+  | 'messages'
+  | 'builder'
+  | 'vouchers'
+  | 'billing'
+  | 'reports'
+  | string
+
+export interface NextBestAction {
+  id: NextBestActionId
+  view?: NextBestActionView
+  /** Populated for winback_at_risk / first_message_leads / all_good. */
+  count?: number
+  /** Populated for upgrade_break_even only. */
+  to_tier?: string
+  /** Populated for upgrade_break_even only — monthly savings in cents. */
+  save_cents?: number
+  /** Human-readable diagnostic — typed but not rendered in the first cut. */
+  signal?: string
+}
+
+export interface NextBestActionResponse {
+  brand_id?: string
+  actions: NextBestAction[]
+}

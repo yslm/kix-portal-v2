@@ -23,6 +23,7 @@
   import type { LiveCampaignCard } from '@/api/portal-admin/types'
   import { fmtSgd } from '@/utils/format/currency'
   import { resolveBrandId } from '@/utils/kix/resolveBrandId'
+  import NbaCard from './overview/NbaCard.vue'
   import SetupGuideCard from './overview/SetupGuideCard.vue'
 
   const { t } = useI18n()
@@ -58,8 +59,14 @@
       <p class="text-sm text-gray-500 mt-1">{{ pageSubtitle }}</p>
     </header>
 
-    <!-- Shopify-style onboarding checklist (auto-hides when complete) -->
-    <SetupGuideCard />
+    <!-- Middle row 1: onboarding pair · Setup guide + Suggested next move.
+         Both cards self-hide on empty / error, so the grid collapses
+         cleanly when neither has anything to say. Two-column on md+
+         widths; single-column stacks on mobile. -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <SetupGuideCard />
+      <NbaCard />
+    </div>
 
     <!-- Live campaigns grid -->
     <section class="space-y-3">
