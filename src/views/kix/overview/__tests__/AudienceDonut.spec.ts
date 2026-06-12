@@ -27,7 +27,7 @@ let lastRingProps: Record<string, unknown> = {}
 const stubs = {
   ArtRingChart: {
     template: '<div data-stub="art-ring-chart" />',
-    props: ['data', 'color', 'radius', 'height', 'showLabel', 'borderRadius', 'showTooltip'],
+    props: ['data', 'colors', 'radius', 'height', 'showLabel', 'borderRadius', 'showTooltip'],
     setup(props: Record<string, unknown>) {
       lastRingProps = { ...props }
     }
@@ -69,8 +69,8 @@ describe('AudienceDonut.vue', () => {
       { value: 28, name: 'Walk-in' }
     ])
 
-    // colors come from segment.color
-    expect(lastRingProps.color).toEqual(['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'])
+    // colors come from segment.color → ArtRingChart `colors` prop (plural)
+    expect(lastRingProps.colors).toEqual(['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'])
 
     // Legend rows rendered
     const legend = wrapper.find('[data-testid="audience-legend"]')

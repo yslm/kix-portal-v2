@@ -48,7 +48,7 @@
     <!-- echarts doughnut via ArtRingChart (global auto-import) -->
     <ArtRingChart
       :data="ringData"
-      :color="colors"
+      :colors="colors"
       :radius="['60%', '85%']"
       height="10rem"
       :showLabel="false"
