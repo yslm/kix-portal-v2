@@ -412,6 +412,32 @@ Done so far on the ArtTable/card restyle: **Campaigns** (ArtTable), **Games** (c
 
 ---
 
+## Week 8d: Customers rebuild — ArtTable + segment filter (2026-06-13)
+
+**Status: DONE — committed, headless-reviewed.** Third view through the restyle template (Campaigns → Games → Customers).
+
+### Commit
+
+- e104838 feat(customers): rebuild onto ArtTable + KPI strip + segment filter
+
+### What shipped
+
+- KPI strip (card-list anatomy): Total customers / Regulars / Total plays / Total redeems.
+- Segment toolbar (All / ⭐ Regular / 🔁 Came back / ✨ New) + name/handle search, client-side.
+- ArtTable: Customer (name/handle + colour-coded segment badge) · Channel · First seen · Plays · Redeems · Last activity + pagination footer.
+- Segment ported VERBATIM from legacy `_seg()` (portal.html ~5118): `redeems>0 && plays>=5 → Regular; plays>=2 → Came back; else New` — derived only from real plays/redeems. Real row fields verified vs `_real_customer_rows` (handle/channel/first_seen/plays/redeems/last_active) → no type change needed.
+
+### Result
+
+- `customers/customersModel.ts` (12 unit cases) + `CustomerList.spec` rewritten (6). Tests **225/225**; tsc zero new production errors.
+- Headless (`?brand=demo#/customer-list` — note the route is `/customer-list`, NOT `/customers`): KPIs 6/2/23/4; 6 rows; segment badges colour-coded; Regular filter → 2 rows. Native art-design-pro.
+
+### ▶ RESUME HERE (breadth track)
+
+ArtTable/card restyle done: **Campaigns · Games · Customers**. Remaining single-thin views: **Builder / Flows / Audiences / AbTests / Rules** + P2 set (Templates/Cases/VipTiers/Storefront/Billing/Geofences/Creatives/Rewards). Flows or Audiences are the next ArtTable candidates. Deferred features still logged: Games Smart-Recommend wizard; reconcile Overview/Reports campaign tables to real-field-first.
+
+---
+
 ## Future: Production cutover (HELD — deferred until view deepening complete)
 
 Originally Plan 7. Now deferred to after all view-deepening passes finish (Week 7 Overview + Plan 8+ for the remaining 17 views) AND user signs off on visual parity per view.
