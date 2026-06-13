@@ -379,6 +379,39 @@ Campaigns is the proven ArtTable restyle template. Remaining single-thin views t
 
 ---
 
+## Week 8c: Games rebuild — art-design-pro card gallery (2026-06-13)
+
+**Status: DONE — gallery + KPIs + actions shipped, headless-reviewed, committed. Smart-Recommend creation wizard explicitly DEFERRED.**
+
+Second view through the restyle template (after Campaigns). Games is a card-gallery (not a table), so the art-design-pro centerpiece is polished `.art-card` game cards rather than ArtTable.
+
+### Commit
+
+- 8a3f6ca feat(games): rebuild gallery onto art-design-pro cards + KPI strip
+
+### What shipped
+
+- **KPI strip** (card-list anatomy): Total games / Active / Playable / Customizable — honest aggregates of real fields.
+- **Game cards**: cover image when `cover_url` exists, else a deterministic **gradient+emoji fallback keyed by game type** (ports legacy `_KIX_COVER_PALETTE`: scratch🎟️/spin🎰/quiz❓/match🧩/puzzle🔍/arcade🎮/board♟️/card🃏/other🎲). Name (legacy fallback chain) + slug + status badge + Play/Customize.
+- **Play** gated on a real play target (`play_url > game_file > unpacked_url`) → `window.open(_, '_blank')`. **Customize** gated on a real `order_id`.
+- Empty-state hero + "+ Create game" CTA.
+
+### Scope decision (deferred)
+
+The **4-step Smart-Recommend creation wizard** (describe → real `/games/recommend` AI ranker → `/games/build` async build → poll `/games/orders/{id}` → launch checklist) and the embedded gamification **IDE Customize modal** are a large stateful/async feature, NOT "beautify an existing surface". Deferred as the next increment; "+ Create game" and Customize route to `/builder` for now. (Endpoints are real + production-ready per the explore — when picked up, it's a multi-component flow with polling + a 503 fallback for when sample_brander is down.)
+
+### Result
+
+- Pure logic in `games/gamesModel.ts` (11 unit cases); `Games.spec` rewritten (7). Tests **211/211** (+14). tsc zero new production errors.
+- Headless (`?brand=demo#/games`): KPIs 5/2/4/2; 5 cards; 4 Play + 2 Customize buttons; gradient palette varies by slug. Looks fully native to art-design-pro.
+- `BrandGame` type already carried every field — no type change needed. Demo `brand-games` mock added (no `cover_url` → exercises the gradient fallback).
+
+### ▶ RESUME HERE (breadth track)
+
+Done so far on the ArtTable/card restyle: **Campaigns** (ArtTable), **Games** (card gallery). Remaining single-thin views: **Builder / Customers / Flows / Audiences / AbTests / Rules** + P2 set. Customers is the next strongest ArtTable candidate. Plus two deferred features now logged: the Games Smart-Recommend wizard, and reconciling Overview `CampaignTable.vue` / Reports `TopCampaignsTable.vue` to real-field-first (low priority).
+
+---
+
 ## Future: Production cutover (HELD — deferred until view deepening complete)
 
 Originally Plan 7. Now deferred to after all view-deepening passes finish (Week 7 Overview + Plan 8+ for the remaining 17 views) AND user signs off on visual parity per view.
