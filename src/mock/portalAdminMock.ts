@@ -179,6 +179,64 @@ const MOCKS: Record<string, unknown> = {
       }
     ]
   },
+  // Verified customers — { customers } wrapper (mirrors _real_customer_rows).
+  // Mix of segments: ⭐ Regular (redeems>0 && plays>=5), 🔁 Came back
+  // (plays>=2), ✨ New (else) — all derived from these real plays/redeems.
+  '/api/v1/portal-admin/customers': {
+    customers: [
+      {
+        handle: '+65 8123 4567',
+        name: 'Aisha Tan',
+        channel: 'QR poster',
+        first_seen: '2026-04-02',
+        plays: 9,
+        redeems: 3,
+        last_active: '2026-06-12'
+      },
+      {
+        handle: '+65 9234 5678',
+        channel: 'Social',
+        first_seen: '2026-04-18',
+        plays: 6,
+        redeems: 1,
+        last_active: '2026-06-11'
+      },
+      {
+        handle: '+60 12 345 6789',
+        name: 'Bobby Lim',
+        channel: 'Referral',
+        first_seen: '2026-05-03',
+        plays: 4,
+        redeems: 0,
+        last_active: '2026-06-10'
+      },
+      {
+        handle: '+65 8345 6789',
+        channel: 'QR poster',
+        first_seen: '2026-05-21',
+        plays: 2,
+        redeems: 0,
+        last_active: '2026-06-09'
+      },
+      {
+        handle: '+65 7456 7890',
+        name: 'Cara Wong',
+        channel: 'Walk-in',
+        first_seen: '2026-06-01',
+        plays: 1,
+        redeems: 0,
+        last_active: '2026-06-08'
+      },
+      {
+        handle: '+65 6567 8901',
+        channel: 'Social',
+        first_seen: '2026-06-05',
+        plays: 1,
+        redeems: 0,
+        last_active: '2026-06-06'
+      }
+    ]
+  },
   // 14-day cohort — bare CohortRow[] (newest last).
   '/api/v1/portal-admin/reports/cohort': [
     { cohort_day: '2026-05-30', new_customers: 7 },
