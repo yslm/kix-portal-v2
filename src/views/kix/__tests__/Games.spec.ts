@@ -1,15 +1,19 @@
 /**
- * Games.vue render test — exercises the four state branches of the
- * My Games grid: loaded (legacy `{ games }` wrapper), bare array,
- * error, and empty (hero placeholder).
+ * Games.vue render test — rebuilt gallery (art-design-pro look).
  *
- * Uses a bare `t(key) => key` stub instead of the full vue-i18n setup;
- * the actual translation pipeline is covered by
- * `src/locales/__tests__/i18n-smoke.spec.ts`.
+ * Three regions:
+ *   1. KPI summary strip — Total / Active / Playable / Customizable,
+ *      computed from the loaded list (card-list anatomy).
+ *   2. Header CTA — "+ Create game" → /builder (the Smart-Recommend
+ *      creation wizard is deferred; the CTA routes to the build surface).
+ *   3. Card gallery — one .art-card per game with cover (image or
+ *      gradient+emoji fallback), name, slug, status badge, and Play /
+ *      Customize actions gated on real fields.
  *
- * `resolveBrandId` is stubbed so the test doesn't depend on the live
- * `window.location.search` / localStorage state — we only care that the
- * fetcher is called once.
+ * Heavy logic (KPIs, name fallback, playability, cover palette) is unit
+ * tested in games/__tests__/gamesModel.spec.ts. This component test only
+ * verifies wiring: KPIs render, cards render, action gating works, Play
+ * opens the target, the CTA routes, and empty/error render.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
@@ -26,101 +30,134 @@ vi.mock('vue-i18n', () => ({
   useI18n: () => ({ t: (key: string) => key })
 }))
 
+const push = vi.fn()
+vi.mock('vue-router', () => ({
+  useRouter: () => ({ push })
+}))
+
 import Games from '../Games.vue'
 import { listBrandGames } from '@/api/portal-admin/games'
 
-const sampleGames = [
+const stubs = {
+  ArtSvgIcon: { template: '<i />', props: ['icon'] },
+  StatusBadge: { template: '<span>{{ status }}</span>', props: ['status'] },
+  ElButton: { template: '<button @click="$emit(\'click\')"><slot /></button>' }
+}
+
+const sample = [
   {
-    id: 'g-001',
-    name: 'Spin the Wheel',
-    game_slug: 'spin-the-wheel',
-    status: 'active'
+    id: 'g1',
+    name: 'Bubble Tea Match',
+    game_slug: 'bubbletea_match3',
+    status: 'active',
+    cover_url: 'https://cdn/x.png',
+    play_url: '/play/demo/1',
+    order_id: 'ord-1'
   },
   {
-    id: 'g-002',
-    // No `name` — should fall through to brand_game_name then game_slug.
-    brand_game_name: 'Scratch Card Friday',
-    game_slug: 'scratch-card',
-    status: 'paused'
+    id: 'g2',
+    brand_game_name: 'Bakery Spin',
+    game_slug: 'bakery_spin',
+    status: 'paused',
+    game_file: '/games/bakery/index.html'
   },
   {
-    id: 'g-003',
-    // Only game_slug present — final fallback before "Untitled".
-    game_slug: 'mystery-box'
+    id: 'g3',
+    game_slug: 'bookstore_gomoku'
   }
 ]
 
-describe('Games.vue · my-games grid', () => {
+const mockList = listBrandGames as unknown as ReturnType<typeof vi.fn>
+
+function mountView() {
+  return mount(Games, { global: { stubs } })
+}
+
+describe('Games.vue · rebuilt gallery', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('renders the page header and the games grid after a successful fetch (legacy `{ games }` shape)', async () => {
-    ;(listBrandGames as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      data: { games: sampleGames }
-    })
-
-    const wrapper = mount(Games)
+  it('renders header + KPI strip with computed totals (legacy { games } shape)', async () => {
+    mockList.mockResolvedValueOnce({ data: { games: sample } })
+    const wrapper = mountView()
     await flushPromises()
 
     expect(wrapper.text()).toContain('portal.games.title')
-    expect(wrapper.text()).toContain('portal.games.subtitle')
 
-    expect(wrapper.find('[data-testid="games-grid"]').exists()).toBe(true)
+    const kpis = wrapper.find('[data-testid="game-kpis"]')
+    expect(kpis.exists()).toBe(true)
+    const kt = kpis.text()
+    expect(kt).toContain('3') // total
+    expect(kt).toContain('2') // playable
+    expect(kt).toContain('1') // active / customizable
+  })
+
+  it('renders a card per game with name + slug + status', async () => {
+    mockList.mockResolvedValueOnce({ data: sample })
+    const wrapper = mountView()
+    await flushPromises()
+
     const cards = wrapper.findAll('[data-testid="game-card"]')
     expect(cards).toHaveLength(3)
-
-    // Card 1: explicit name wins
-    expect(cards[0].text()).toContain('Spin the Wheel')
-    expect(cards[0].text()).toContain('spin-the-wheel')
+    expect(cards[0].text()).toContain('Bubble Tea Match')
+    expect(cards[0].text()).toContain('bubbletea_match3')
     expect(cards[0].text()).toContain('active')
-
-    // Card 2: name is missing → brand_game_name fallback
-    expect(cards[1].text()).toContain('Scratch Card Friday')
-    expect(cards[1].text()).toContain('paused')
-
-    // Card 3: only slug → slug is the display name
-    expect(cards[2].text()).toContain('mystery-box')
-
-    // Empty hero is not shown when there are games.
-    expect(wrapper.find('[data-testid="games-empty-hero"]').exists()).toBe(false)
+    expect(cards[1].text()).toContain('Bakery Spin') // brand_game_name fallback
+    expect(cards[2].text()).toContain('bookstore_gomoku') // slug fallback
   })
 
-  it('normalises a bare-array response', async () => {
-    ;(listBrandGames as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      data: sampleGames
-    })
-
-    const wrapper = mount(Games)
+  it('gates Play on playability and Customize on order_id', async () => {
+    mockList.mockResolvedValueOnce({ data: sample })
+    const wrapper = mountView()
     await flushPromises()
 
-    expect(wrapper.findAll('[data-testid="game-card"]')).toHaveLength(3)
-    expect(wrapper.text()).toContain('Spin the Wheel')
+    // g1: playable + customizable
+    expect(wrapper.find('[data-testid="play-g1"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="customize-g1"]').exists()).toBe(true)
+    // g2: playable, not customizable
+    expect(wrapper.find('[data-testid="play-g2"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="customize-g2"]').exists()).toBe(false)
+    // g3: neither
+    expect(wrapper.find('[data-testid="play-g3"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="customize-g3"]').exists()).toBe(false)
   })
 
-  it('shows the error branch when fetch rejects', async () => {
-    ;(listBrandGames as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-      new Error('network down')
-    )
-
-    const wrapper = mount(Games)
+  it('Play opens the play target in a new tab', async () => {
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
+    mockList.mockResolvedValueOnce({ data: sample })
+    const wrapper = mountView()
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Failed to load')
-    expect(wrapper.text()).toContain('network down')
-    expect(wrapper.find('[data-testid="games-grid"]').exists()).toBe(false)
+    await wrapper.find('[data-testid="play-g1"]').trigger('click')
+    expect(openSpy).toHaveBeenCalledWith('/play/demo/1', '_blank')
+    openSpy.mockRestore()
   })
 
-  it('shows the empty-state hero placeholder when the brand has no games', async () => {
-    ;(listBrandGames as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      data: { games: [] }
-    })
+  it('"+ Create game" CTA routes to /builder', async () => {
+    mockList.mockResolvedValueOnce({ data: sample })
+    const wrapper = mountView()
+    await flushPromises()
 
-    const wrapper = mount(Games)
+    await wrapper.find('[data-testid="create-game"]').trigger('click')
+    expect(push).toHaveBeenCalledWith('/builder')
+  })
+
+  it('shows the empty hero when the brand has no games', async () => {
+    mockList.mockResolvedValueOnce({ data: { games: [] } })
+    const wrapper = mountView()
     await flushPromises()
 
     expect(wrapper.find('[data-testid="games-empty-hero"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('No games yet')
-    expect(wrapper.find('[data-testid="games-grid"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="game-card"]').exists()).toBe(false)
+  })
+
+  it('shows the error state when the fetch rejects', async () => {
+    mockList.mockRejectedValueOnce(new Error('network down'))
+    const wrapper = mountView()
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="games-error"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('network down')
   })
 })

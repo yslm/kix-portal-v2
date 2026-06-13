@@ -136,6 +136,49 @@ const MOCKS: Record<string, unknown> = {
       ctr_pct: '4.5%'
     }
   ],
+  // My Games gallery — { games } wrapper (mirrors brand_games endpoint).
+  // No cover_url → exercises the deterministic gradient+emoji fallback
+  // (varied slugs show the per-type palette). Varied play targets / order
+  // ids drive the Playable / Customizable KPIs + action gating.
+  '/api/v1/portal-admin/brand-games': {
+    brand_id: 'demo_brand',
+    games: [
+      {
+        id: 'demo-g-001',
+        name: '珍珠奶茶消消乐',
+        game_slug: 'bubbletea_match3',
+        status: 'active',
+        play_url: '/play/demo/bubbletea_match3',
+        order_id: 'ord-demo-1'
+      },
+      {
+        id: 'demo-g-002',
+        name: '幸运大转盘',
+        game_slug: 'lucky_spin',
+        status: 'active',
+        play_url: '/play/demo/lucky_spin'
+      },
+      {
+        id: 'demo-g-003',
+        brand_game_name: '刮刮乐·周五',
+        game_slug: 'scratch_win',
+        status: 'paused',
+        game_file: '/games/scratch_win/index.html',
+        order_id: 'ord-demo-3'
+      },
+      {
+        id: 'demo-g-004',
+        game_slug: 'trivia_quiz',
+        status: 'draft'
+      },
+      {
+        id: 'demo-g-005',
+        name: '五子棋对战',
+        game_slug: 'bookstore_gomoku',
+        play_url: '/play/demo/bookstore_gomoku'
+      }
+    ]
+  },
   // 14-day cohort — bare CohortRow[] (newest last).
   '/api/v1/portal-admin/reports/cohort': [
     { cohort_day: '2026-05-30', new_customers: 7 },
