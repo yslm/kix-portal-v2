@@ -237,6 +237,170 @@ const MOCKS: Record<string, unknown> = {
       }
     ]
   },
+  // Audiences — { audiences } wrapper. Varied types + sizes + geofence.
+  '/api/v1/portal-admin/audiences': {
+    audiences: [
+      {
+        id: 'aud-1',
+        name: 'Bedok · 200m geofence',
+        type: 'geofence',
+        size_estimate: 1240,
+        geofence_m: 200,
+        created_at: '2026-05-02',
+        last_used_at: '2026-06-10'
+      },
+      {
+        id: 'aud-2',
+        name: 'Loyalty VIPs',
+        type: 'retargeting',
+        size_estimate: 386,
+        created_at: '2026-04-18',
+        last_used_at: '2026-06-11'
+      },
+      {
+        id: 'aud-3',
+        name: 'Lookalike · top spenders',
+        type: 'lookalike',
+        size_estimate: 5400,
+        created_at: '2026-05-20',
+        last_used_at: null
+      },
+      {
+        id: 'aud-4',
+        name: 'Weekend walk-ins',
+        type: 'custom',
+        size_estimate: 920,
+        created_at: '2026-06-01',
+        last_used_at: '2026-06-09'
+      },
+      {
+        id: 'aud-5',
+        name: 'Orchard · 300m geofence',
+        type: 'geofence',
+        size_estimate: 3100,
+        geofence_m: 300,
+        created_at: '2026-06-03',
+        last_used_at: '2026-06-12'
+      }
+    ]
+  },
+  // A/B tests — { tests } wrapper. Mixed statuses + lift/p-value.
+  '/api/v1/portal-admin/ab-tests': {
+    ab_tests: [
+      {
+        id: 'ab-1',
+        name: 'Spin vs Scratch · hero',
+        campaign_a_name: 'Spin hero',
+        campaign_b_name: 'Scratch hero',
+        metric: 'CTR',
+        status: 'running',
+        lift_pct: 4.2,
+        p_value: 0.21
+      },
+      {
+        id: 'ab-2',
+        name: 'CTA copy test',
+        campaign_a_name: 'Win now',
+        campaign_b_name: 'Play free',
+        metric: 'Conversion',
+        status: 'significant',
+        lift_pct: 12.8,
+        p_value: 0.03,
+        winner: 'b'
+      },
+      {
+        id: 'ab-3',
+        name: 'Reward size',
+        campaign_a_name: 'S$2 off',
+        campaign_b_name: 'S$5 off',
+        metric: 'Redemption',
+        status: 'shipped',
+        lift_pct: 8.1,
+        p_value: 0.04,
+        winner: 'b'
+      },
+      {
+        id: 'ab-4',
+        name: 'Timing · AM vs PM',
+        campaign_a_name: 'Morning',
+        campaign_b_name: 'Evening',
+        metric: 'CPA',
+        status: 'stopped',
+        lift_pct: -1.5,
+        p_value: 0.62
+      }
+    ]
+  },
+  // Automations / rules — { rules } wrapper. Mixed states.
+  '/api/v1/portal-admin/automations': {
+    rules: [
+      {
+        id: 'r-1',
+        name: 'Pause overspend',
+        state: 'on',
+        condition: 'spend > S$100/day',
+        action: 'pause',
+        scope: 'All campaigns',
+        last_triggered_at: '2026-06-11'
+      },
+      {
+        id: 'r-2',
+        name: 'Scale winners',
+        state: 'on',
+        condition: 'ROAS > 4×',
+        action: 'scale',
+        scope: 'Active campaigns',
+        last_triggered_at: '2026-06-09'
+      },
+      {
+        id: 'r-3',
+        name: 'Low-balance alert',
+        state: 'notify_only',
+        condition: 'runway < 7 days',
+        action: 'notify',
+        scope: 'Wallet',
+        last_triggered_at: null
+      },
+      {
+        id: 'r-4',
+        name: 'Stop on high CPA',
+        state: 'off',
+        condition: 'CPA > S$10',
+        action: 'pause',
+        scope: 'All campaigns',
+        last_triggered_at: '2026-05-28'
+      }
+    ]
+  },
+  // Flows — { flows } wrapper. Mixed statuses + step counts.
+  '/api/v1/portal-admin/flows': {
+    flows: [
+      {
+        flow_id: 'f-1',
+        name: '周末拉新 flow',
+        status: 'active',
+        start_date: '2026-06-01',
+        end_date: '2026-06-30',
+        steps_count: 4
+      },
+      {
+        flow_id: 'f-2',
+        name: 'Welcome series',
+        status: 'active',
+        start_date: '2026-05-15',
+        steps_count: 3
+      },
+      {
+        flow_id: 'f-3',
+        name: 'Win-back lapsed',
+        status: 'paused',
+        start_date: '2026-04-20',
+        end_date: '2026-05-20',
+        steps_count: 5
+      },
+      { flow_id: 'f-4', name: 'Payday blast (draft)', status: 'draft', steps_count: 2 }
+    ]
+  },
   // 14-day cohort — bare CohortRow[] (newest last).
   '/api/v1/portal-admin/reports/cohort': [
     { cohort_day: '2026-05-30', new_customers: 7 },

@@ -1,84 +1,96 @@
 <script setup lang="ts">
   /**
-   * Rules (Automations) view — Plan 4 Task 6.
-   *
-   * Source: `kix-platform/landing/portal.html`, `<section id="view-rules">`
-   * (lines 1933-1955) + legacy fetcher `kixLoadRules()` (~line 7185) +
-   * table renderer (lines 7206-7232). The legacy section bundles in
-   * one place:
-   *
-   *   - Page header + "Audit log" + "+ Create rule" CTAs (line 1934-1943)
-   *   - Rules table (`#rules-tbody` at line 1947) with columns
-   *     On · Rule · Condition · Action · Scope · Last triggered · actions
-   *   - Per-row On / Off / Notify only toggle buttons that PATCH
-   *     `/api/v1/portal-admin/automations/<id>/state`
-   *     (`kixToggleAutomation()` at line 7238)
-   *   - Empty-state copy gated on `empty_state_hint` from the wrapper,
-   *     with a "Source: redis · Updated <rel>" footer line
-   *   - The "+ Create rule" CTA actually navigates to the Flows wizard
-   *     (line 1941: `onclick="kixSwitchView('flows')"`) — there is no
-   *     dedicated rule create form in the current portal
-   *   - A separate dry-run endpoint at line 10495 (`POST /rules/dry-run`)
-   *     used by the inline rule builder preview pane
-   *
-   * Plan 4 T6 ports ONLY the page header + a single-page list of rules.
-   * The table columns shipped here mirror the legacy: **name · state ·
-   * condition · action · scope · last triggered**. Everything else is
-   * DEFERRED:
-   *   - Per-row On / Off / Notify only toggle buttons + the PATCH
-   *     `/automations/<id>/state` call
-   *   - "+ Create rule" CTA (legacy redirects to Flows)
-   *   - Audit log modal
-   *   - Dry-run endpoint + inline rule builder preview
-   *   - `Source: redis · Updated <rel>` footer line on the empty state
-   *
-   * Same template as Plan 4 T1-T5: port a thin honest slice of a real
-   * endpoint, defer the rest behind a clear comment.
-   *
-   * Naming note: the route + view-id stay "rules" (legacy convention,
-   * Wave4 W4-C·B36 doesn't rename routes mid-flight) but the rendered
-   * page title is "Automations" — same as the legacy `<h1>` at line
-   * 1936. State badge uses the shared `<StatusBadge>` for parity with
-   * other Plan 4 views; the `notify_only` value falls through to the
-   * gray-pill default (safe), matching the legacy "Notify only" badge.
-   *
-   * State machine: loading → (data | empty | error). Empty-state copy
-   * mirrors the legacy `empty_state_hint || 'No automation rules yet.'`
-   * (portal.html line 7201).
-   *
-   * Endpoint: GET /api/v1/portal-admin/automations. Brand inferred from
-   * JWT by the portal-admin router — no explicit `?brand=` param, same
-   * as `listAbTests()` / `listCustomers()` / `listAudiences()`.
+   * Rules (Automations) view — rebuilt onto art-design-pro components
+   * (Week 8). Source: portal.html #view-rules (lines 1933-1955). Native
+   * `ArtTable` + KPI strip + state filter + search. Logic in
+   * `rules/rulesModel.ts`. Endpoint: GET /api/v1/portal-admin/automations
+   * (brand from JWT). Real fields: id / name / state / condition / action
+   * / scope / last_triggered_at. DEFERRED: per-row On/Off/Notify toggle
+   * (PATCH /automations/<id>/state), audit log, dry-run builder.
    */
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, h, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { listRules } from '@/api/portal-admin/rules'
   import type { Rule } from '@/api/portal-admin/types'
+  import type { ColumnOption } from '@/types/component'
   import StatusBadge from '@/components/StatusBadge.vue'
+  import {
+    normalizeRules,
+    ruleKpis,
+    filterRules,
+    RULE_FILTERS,
+    type RuleFilterKey
+  } from './rules/rulesModel'
 
   const { t } = useI18n()
 
   const loading = ref(true)
   const error = ref<string | null>(null)
-  const rules = ref<Rule[]>([])
+  const all = ref<Rule[]>([])
+  const stateFilter = ref<RuleFilterKey>('all')
+  const query = ref('')
+  const pagination = ref({ current: 1, size: 10, total: 0 })
 
-  const pageTitle = computed(() => t('portal.rules.title'))
-  const pageSubtitle = computed(() => t('portal.rules.subtitle'))
+  const filtered = computed(() =>
+    filterRules(all.value, { state: stateFilter.value, query: query.value })
+  )
+  const paged = computed(() => {
+    const s = (pagination.value.current - 1) * pagination.value.size
+    return filtered.value.slice(s, s + pagination.value.size)
+  })
+  watch(
+    filtered,
+    (rows) => {
+      pagination.value.total = rows.length
+      pagination.value.current = 1
+    },
+    { immediate: true }
+  )
+
+  const kpis = computed(() => ruleKpis(all.value))
+  const kpiCards = computed(() => [
+    { icon: 'ri:flow-chart', label: 'Total rules', value: kpis.value.total },
+    { icon: 'ri:toggle-line', label: 'On', value: kpis.value.on },
+    { icon: 'ri:pause-circle-line', label: 'Off', value: kpis.value.off },
+    { icon: 'ri:notification-3-line', label: 'Notify only', value: kpis.value.notifyOnly }
+  ])
+
+  const columns = computed<ColumnOption<Rule>[]>(() => [
+    {
+      prop: 'state',
+      label: 'State',
+      width: 120,
+      formatter: (r: Rule) => h(StatusBadge, { status: r.state })
+    },
+    {
+      prop: 'name',
+      label: 'Rule',
+      minWidth: 160,
+      formatter: (r: Rule) => h('span', { class: 'font-medium text-gray-900' }, r.name ?? '—')
+    },
+    {
+      prop: 'condition',
+      label: 'Condition',
+      minWidth: 160,
+      formatter: (r: Rule) =>
+        h('span', { class: 'text-sm text-gray-600 font-mono' }, r.condition ?? '—')
+    },
+    { prop: 'action', label: 'Action', width: 110, formatter: (r: Rule) => r.action ?? '—' },
+    { prop: 'scope', label: 'Scope', width: 140, formatter: (r: Rule) => r.scope ?? '—' },
+    {
+      prop: 'last_triggered_at',
+      label: 'Last triggered',
+      width: 140,
+      formatter: (r: Rule) => r.last_triggered_at ?? '—'
+    }
+  ])
 
   async function load() {
     loading.value = true
     error.value = null
     try {
       const res = await listRules()
-      const data = res.data
-      if (Array.isArray(data)) {
-        rules.value = data
-      } else if (data && typeof data === 'object') {
-        const d = data as { items?: Rule[]; rules?: Rule[]; automations?: Rule[] }
-        rules.value = d.items ?? d.rules ?? d.automations ?? []
-      } else {
-        rules.value = []
-      }
+      all.value = normalizeRules(res.data)
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : String(e)
     } finally {
@@ -86,108 +98,90 @@
     }
   }
 
-  /**
-   * Row key — `id` is required by the portal-admin Rule record (the
-   * FastAPI route always emits it, both for redis-persisted rows and the
-   * demo seed). The array-index fallback is defensive against schema
-   * drift, matching the convention in Audiences / AbTests / CustomerList.
-   */
-  function rowKey(r: Rule, idx: number): string {
-    return r.id ?? `idx-${idx}`
+  function handleCurrentChange(c: number) {
+    pagination.value.current = c
   }
-
-  /**
-   * State-to-StatusBadge mapping — the legacy badge taxonomy is three
-   * values (`on` / `off` / `notify_only`) while the shared
-   * `<StatusBadge>` colour map keys off (`active` / `inactive` / …).
-   * We project the rule state onto that vocabulary so green/gray
-   * conveys the same intent as the legacy "On"/"Off" pill. The
-   * `notify_only` case falls through to the unknown-but-truthy gray
-   * default — safe, and visually distinct from the bare empty case.
-   */
-  function stateForBadge(state: string | undefined): string | undefined {
-    if (state === 'on') return 'active'
-    if (state === 'off') return 'inactive'
-    return state // 'notify_only' or other → gray pill fallback in StatusBadge
+  function handleSizeChange(s: number) {
+    pagination.value.size = s
+    pagination.value.current = 1
   }
 
   onMounted(load)
 </script>
 
 <template>
-  <div class="kix-rules p-8 space-y-6">
-    <!-- Page header (mirrors `<div class="ent-page-head">` at portal.html line 1934) -->
+  <div class="kix-rules p-5 space-y-5">
     <header>
-      <h1 class="text-2xl font-bold">{{ pageTitle }}</h1>
-      <p class="text-sm text-gray-500 mt-1">{{ pageSubtitle }}</p>
+      <h1 class="text-2xl font-bold">{{ t('portal.rules.title') }}</h1>
+      <p class="text-sm text-gray-500 mt-1">{{ t('portal.rules.subtitle') }}</p>
     </header>
 
-    <!-- Rules table · 4-state -->
-    <section
-      v-if="loading"
-      class="text-gray-400 text-sm py-6 text-center"
-      data-testid="rules-loading"
-    >
-      Loading rules…
-    </section>
+    <div data-testid="rule-kpis" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <article
+        v-for="(card, i) in kpiCards"
+        :key="i"
+        class="art-card relative flex flex-col justify-center h-28 px-5"
+      >
+        <span class="text-g-700 text-sm">{{ card.label }}</span>
+        <span class="text-[26px] font-medium mt-2 tabular-nums leading-tight">{{
+          card.value
+        }}</span>
+        <div
+          class="absolute top-0 bottom-0 right-5 m-auto size-12.5 rounded-xl flex-cc bg-theme/10"
+        >
+          <ArtSvgIcon :icon="card.icon" class="text-xl text-theme" />
+        </div>
+      </article>
+    </div>
 
-    <section
-      v-else-if="error"
-      class="text-red-600 text-sm py-6 text-center"
-      data-testid="rules-error"
-    >
-      Failed to load: {{ error }}
-    </section>
-
-    <!--
-      Empty-state — mirrors the legacy "No automation rules yet" string at
-      portal.html line 7201. The legacy copy also offers a "+ Create rule"
-      CTA (which actually navigates to the Flows wizard); it is trimmed
-      here because that flow stays in the legacy view for now and the
-      DEFERRED create path is documented in rules.ts.
-    -->
-    <section
-      v-else-if="rules.length === 0"
-      class="text-gray-400 text-sm py-12 text-center border border-dashed border-gray-200 rounded-xl"
-      data-testid="rules-empty"
-    >
-      No automation rules yet.
-    </section>
-
-    <section v-else class="space-y-3" data-testid="rules-list">
-      <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <table class="w-full text-sm">
-          <thead class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
-            <tr>
-              <th class="px-4 py-2 font-medium">On</th>
-              <th class="px-4 py-2 font-medium">Rule</th>
-              <th class="px-4 py-2 font-medium">Condition</th>
-              <th class="px-4 py-2 font-medium">Action</th>
-              <th class="px-4 py-2 font-medium">Scope</th>
-              <th class="px-4 py-2 font-medium">Last triggered</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="(rule, idx) in rules"
-              :key="rowKey(rule, idx)"
-              class="border-t border-gray-100 hover:bg-gray-50"
-              data-testid="rule-row"
-            >
-              <td class="px-4 py-2">
-                <StatusBadge :status="stateForBadge(rule.state)" />
-              </td>
-              <td class="px-4 py-2 font-medium text-gray-900">{{ rule.name ?? '—' }}</td>
-              <td class="px-4 py-2 text-gray-600 font-mono text-xs">
-                {{ rule.condition ?? '—' }}
-              </td>
-              <td class="px-4 py-2 text-gray-600">{{ rule.action ?? '—' }}</td>
-              <td class="px-4 py-2 text-gray-600">{{ rule.scope ?? '—' }}</td>
-              <td class="px-4 py-2 text-gray-600">{{ rule.last_triggered_at ?? '—' }}</td>
-            </tr>
-          </tbody>
-        </table>
+    <ElCard class="art-table-card" shadow="never">
+      <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+        <div class="flex items-center gap-1 rounded-lg bg-g-100 p-1">
+          <button
+            v-for="f in RULE_FILTERS"
+            :key="f.key"
+            :data-testid="`rule-${f.key}`"
+            class="px-3 py-1 text-sm rounded-md transition-colors"
+            :class="
+              stateFilter === f.key
+                ? 'bg-white text-theme font-medium shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            "
+            @click="stateFilter = f.key"
+          >
+            {{ f.label }}
+          </button>
+        </div>
+        <ElInput
+          v-model="query"
+          data-testid="rules-search"
+          placeholder="Search rules…"
+          clearable
+          class="max-w-xs"
+        />
       </div>
-    </section>
+
+      <div v-if="error" data-testid="rules-error" class="text-red-600 text-sm py-10 text-center">
+        Failed to load rules: {{ error }}
+      </div>
+      <div
+        v-else-if="!loading && all.length === 0"
+        data-testid="rules-empty"
+        class="text-gray-400 text-sm py-12 text-center"
+      >
+        No automation rules yet.
+      </div>
+
+      <ArtTable
+        v-else
+        :loading="loading"
+        :data="paged"
+        :columns="columns"
+        :pagination="pagination"
+        :show-table-header="false"
+        @pagination:current-change="handleCurrentChange"
+        @pagination:size-change="handleSizeChange"
+      />
+    </ElCard>
   </div>
 </template>

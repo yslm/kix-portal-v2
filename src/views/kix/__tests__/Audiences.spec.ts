@@ -1,126 +1,99 @@
 /**
- * Audiences.vue render test — exercises the four state branches of the
- * saved-audiences table: loaded (bare array — the canonical
- * portal-admin shape), `{ audiences }` wrapper (defensive), error, and
- * empty.
- *
- * Same fixture / stubbing shape as CustomerList.spec.ts — `t(key) => key`
- * stub, no brand-id stub needed because `listAudiences()` infers brand
- * from the JWT (no explicit `?brand=` param, mirroring Reports +
- * CustomerList). The actual translation pipeline is covered by
- * `src/locales/__tests__/i18n-smoke.spec.ts`.
+ * Audiences.vue render test — rebuilt view (art-design-pro look).
+ * KPI strip + type filter + search + ArtTable. Heavy logic unit-tested
+ * in audiences/__tests__/audiencesModel.spec.ts; this verifies wiring.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+import { defineComponent, h } from 'vue'
 
-vi.mock('@/api/portal-admin/audiences', () => ({
-  listAudiences: vi.fn()
-}))
-
-vi.mock('vue-i18n', () => ({
-  useI18n: () => ({ t: (key: string) => key })
-}))
+vi.mock('@/api/portal-admin/audiences', () => ({ listAudiences: vi.fn() }))
+vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k: string) => k }) }))
 
 import Audiences from '../Audiences.vue'
 import { listAudiences } from '@/api/portal-admin/audiences'
 
-const sampleAudiences = [
-  {
-    id: 'aud_bedok_200m',
-    name: 'Bedok · 200m geofence',
-    type: 'geofence',
-    size_estimate: 18000,
-    geofence_m: 200,
-    created_at: '2026-03-15',
-    last_used_at: '2026-05-31'
-  },
-  {
-    // No `type` — display falls back to em-dash badge placeholder.
-    id: 'aud_first_time',
-    name: 'First-time customers',
-    size_estimate: 42000,
-    created_at: '2026-04-02',
-    last_used_at: null
+const ArtTableStub = defineComponent({
+  name: 'ArtTable',
+  props: ['data', 'columns', 'loading', 'pagination'],
+  setup(props) {
+    return () =>
+      h(
+        'div',
+        { 'data-testid': 'art-table', 'data-row-count': (props.data ?? []).length },
+        (props.data ?? []).map((r: { id: string; name: string }) =>
+          h('div', { 'data-testid': `row-${r.id}` }, r.name)
+        )
+      )
   }
+})
+const stubs = {
+  ArtTable: ArtTableStub,
+  ArtSvgIcon: { template: '<i />', props: ['icon'] },
+  ElInput: {
+    template:
+      '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+    props: ['modelValue']
+  }
+}
+
+const sample = [
+  { id: 'a1', name: 'Lunch crowd', type: 'geofence', size_estimate: 1200, geofence_m: 200 },
+  { id: 'a2', name: 'Loyalty VIPs', type: 'retargeting', size_estimate: 340 }
 ]
+const mockList = listAudiences as unknown as ReturnType<typeof vi.fn>
+const mountView = () => mount(Audiences, { global: { stubs } })
 
-describe('Audiences.vue · saved-audiences table', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
+describe('Audiences.vue · rebuilt view', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('renders KPI strip with computed totals ({ audiences } shape)', async () => {
+    mockList.mockResolvedValueOnce({ data: { audiences: sample } })
+    const w = mountView()
+    await flushPromises()
+    expect(w.text()).toContain('portal.audiences.title')
+    const k = w.find('[data-testid="audience-kpis"]')
+    expect(k.exists()).toBe(true)
+    expect(k.text()).toContain('2') // total
+    expect(k.text()).toContain('1,540') // total reach 1200+340
   })
 
-  it('renders the page header and the audiences table after a successful fetch (bare-array shape — canonical portal-admin)', async () => {
-    ;(listAudiences as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      data: sampleAudiences
-    })
-
-    const wrapper = mount(Audiences)
+  it('passes all rows to ArtTable (bare array tolerated)', async () => {
+    mockList.mockResolvedValueOnce({ data: sample })
+    const w = mountView()
     await flushPromises()
-
-    expect(wrapper.text()).toContain('portal.audiences.title')
-    expect(wrapper.text()).toContain('portal.audiences.subtitleFull')
-
-    // Data branch visible; loading / error / empty hidden.
-    expect(wrapper.find('[data-testid="audiences-list"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="audiences-loading"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="audiences-error"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="audiences-empty"]').exists()).toBe(false)
-
-    const rows = wrapper.findAll('[data-testid="audience-row"]')
-    expect(rows).toHaveLength(2)
-
-    // Row 1: full set of fields rendered.
-    expect(rows[0].text()).toContain('Bedok · 200m geofence')
-    expect(rows[0].text()).toContain('geofence')
-    // size_estimate=18000 → grouped as 18,000 by toLocaleString (en-US default
-    // under the vitest jsdom runtime).
-    expect(rows[0].text()).toContain('18,000')
-    expect(rows[0].text()).toContain('2026-03-15')
-    expect(rows[0].text()).toContain('2026-05-31')
-
-    // Row 2: missing `type` + null `last_used_at` → em-dash fallbacks.
-    expect(rows[1].text()).toContain('First-time customers')
-    expect(rows[1].text()).toContain('42,000')
-    expect(rows[1].text()).toContain('2026-04-02')
-    expect(rows[1].text()).toContain('—')
+    expect(w.find('[data-testid="art-table"]').attributes('data-row-count')).toBe('2')
   })
 
-  it('normalises a `{ audiences: [...] }` wrapper response', async () => {
-    ;(listAudiences as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      data: { audiences: sampleAudiences }
-    })
-
-    const wrapper = mount(Audiences)
+  it('type filter narrows rows', async () => {
+    mockList.mockResolvedValueOnce({ data: { audiences: sample } })
+    const w = mountView()
     await flushPromises()
-
-    expect(wrapper.findAll('[data-testid="audience-row"]')).toHaveLength(2)
-    expect(wrapper.text()).toContain('Bedok · 200m geofence')
+    await w.find('[data-testid="aud-geofence"]').trigger('click')
+    await flushPromises()
+    expect(w.find('[data-testid="art-table"]').attributes('data-row-count')).toBe('1')
+    expect(w.find('[data-testid="row-a1"]').exists()).toBe(true)
   })
 
-  it('shows the error branch when fetch rejects', async () => {
-    ;(listAudiences as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-      new Error('network down')
-    )
-
-    const wrapper = mount(Audiences)
+  it('search narrows rows', async () => {
+    mockList.mockResolvedValueOnce({ data: { audiences: sample } })
+    const w = mountView()
     await flushPromises()
-
-    expect(wrapper.find('[data-testid="audiences-error"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Failed to load')
-    expect(wrapper.text()).toContain('network down')
-    expect(wrapper.find('[data-testid="audiences-list"]').exists()).toBe(false)
+    await w.find('[data-testid="audiences-search"]').setValue('vip')
+    await flushPromises()
+    expect(w.find('[data-testid="art-table"]').attributes('data-row-count')).toBe('1')
+    expect(w.find('[data-testid="row-a2"]').exists()).toBe(true)
   })
 
-  it('shows the empty-state placeholder when the brand has no audiences', async () => {
-    ;(listAudiences as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      data: []
-    })
-
-    const wrapper = mount(Audiences)
+  it('shows empty + error states', async () => {
+    mockList.mockResolvedValueOnce({ data: { audiences: [] } })
+    const w1 = mountView()
     await flushPromises()
+    expect(w1.find('[data-testid="audiences-empty"]').exists()).toBe(true)
 
-    expect(wrapper.find('[data-testid="audiences-empty"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('No audiences yet')
-    expect(wrapper.find('[data-testid="audiences-list"]').exists()).toBe(false)
+    mockList.mockRejectedValueOnce(new Error('boom'))
+    const w2 = mountView()
+    await flushPromises()
+    expect(w2.find('[data-testid="audiences-error"]').exists()).toBe(true)
   })
 })

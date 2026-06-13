@@ -1,70 +1,127 @@
 <script setup lang="ts">
   /**
-   * Audiences view — Plan 4 Task 4.
+   * Audiences view — rebuilt onto art-design-pro components (Week 8).
    *
-   * Source: `kix-platform/landing/portal.html`, `<section id="view-audiences">`
-   * (lines 1822-1866). The legacy section bundles in one section:
+   * Source: portal.html #view-audiences (lines 1822-1866). Rebuilds the
+   * audiences table onto the native `ArtTable` (column-config) inside an
+   * `ElCard`, with a KPI strip (card-list anatomy) and a type + search
+   * toolbar. Logic in `audiences/audiencesModel.ts`.
    *
-   *   - Page header + "+ New audience" CTA (lines 1823-1829)
-   *   - Inline new-audience form (`#audience-new-form` at line 1830-1857)
-   *     · name + source select + quick-segment preset select
-   *     · advanced JSON-DSL textarea + description input
-   *   - Audiences table (`#audiences-tbody` at line 1861) with columns
-   *     Audience · Source · Size · Last refreshed · Status · row-edit btn
-   *   - Pagination footer appended by `_kixEnsurePagFooter()` (line 6805)
-   *
-   * Plan 4 T4 ports ONLY the page header + a single-page audiences table
-   * fed by the simpler `/api/v1/portal-admin/audiences` GET endpoint —
-   * see `audiences.ts` for the trade-off rationale. Everything else is
-   * DEFERRED:
-   *   - New-audience form (name / source / preset / DSL / description)
-   *   - Per-row "Edit" rename button (`kixEditAudience()` line 6830)
-   *   - Pagination prev / next + total
-   *   - StatusBadge column (portal-admin route has no `status` field;
-   *     comes with the paginated settings route)
-   *   - RFM summary integration powering the preset quick-segments
-   *
-   * Same template as Plan 4 T1-T3: port a thin honest slice of a real
-   * endpoint, defer the rest behind a clear comment.
-   *
-   * State machine: loading → (data | empty | error). Empty-state copy
-   * mirrors the legacy "No audiences yet. Click + New audience to create
-   * one." string (portal.html line 6777). We drop the "+ New audience"
-   * suggestion in the empty-state body because the CTA is deferred — the
-   * copy will be restored when the form lands.
-   *
-   * Endpoint: GET /api/v1/portal-admin/audiences (brand inferred from
-   * JWT by the portal-admin router — no explicit `?brand=` param, same
-   * as `listCustomers()`).
+   * Endpoint: GET /api/v1/portal-admin/audiences (brand from JWT). Real
+   * fields: id / name / type / size_estimate / geofence_m / created_at /
+   * last_used_at. DEFERRED: the new-audience form, per-row rename, server
+   * pagination.
    */
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, h, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { listAudiences } from '@/api/portal-admin/audiences'
   import type { Audience } from '@/api/portal-admin/types'
+  import type { ColumnOption } from '@/types/component'
+  import {
+    normalizeAudiences,
+    audienceKpis,
+    filterAudiences,
+    sizeLabel,
+    AUDIENCE_FILTERS,
+    type AudienceFilterKey
+  } from './audiences/audiencesModel'
 
   const { t } = useI18n()
 
   const loading = ref(true)
   const error = ref<string | null>(null)
-  const audiences = ref<Audience[]>([])
+  const all = ref<Audience[]>([])
+  const typeFilter = ref<AudienceFilterKey>('all')
+  const query = ref('')
+  const pagination = ref({ current: 1, size: 10, total: 0 })
 
-  const pageTitle = computed(() => t('portal.audiences.title'))
-  const pageSubtitle = computed(() => t('portal.audiences.subtitleFull'))
+  const filtered = computed(() =>
+    filterAudiences(all.value, { type: typeFilter.value, query: query.value })
+  )
+  const paged = computed(() => {
+    const s = (pagination.value.current - 1) * pagination.value.size
+    return filtered.value.slice(s, s + pagination.value.size)
+  })
+  watch(
+    filtered,
+    (rows) => {
+      pagination.value.total = rows.length
+      pagination.value.current = 1
+    },
+    { immediate: true }
+  )
+
+  const kpis = computed(() => audienceKpis(all.value))
+  const kpiCards = computed(() => [
+    {
+      icon: 'ri:group-2-line',
+      label: 'Total audiences',
+      value: kpis.value.total.toLocaleString('en-US')
+    },
+    {
+      icon: 'ri:radar-line',
+      label: 'Total reach',
+      value: kpis.value.totalReach.toLocaleString('en-US')
+    },
+    {
+      icon: 'ri:map-pin-line',
+      label: 'Geofenced',
+      value: kpis.value.geofenced.toLocaleString('en-US')
+    },
+    { icon: 'ri:price-tag-3-line', label: 'Types', value: kpis.value.types.toLocaleString('en-US') }
+  ])
+
+  const columns = computed<ColumnOption<Audience>[]>(() => [
+    {
+      prop: 'name',
+      label: 'Audience',
+      minWidth: 200,
+      formatter: (r: Audience) => h('span', { class: 'font-medium text-gray-900' }, r.name)
+    },
+    {
+      prop: 'type',
+      label: 'Type',
+      width: 140,
+      formatter: (r: Audience) =>
+        r.type
+          ? h('span', { class: 'text-xs px-2 py-0.5 rounded-full bg-theme/10 text-theme' }, r.type)
+          : h('span', { class: 'text-gray-400' }, '—')
+    },
+    {
+      prop: 'size_estimate',
+      label: 'Size',
+      width: 120,
+      align: 'right',
+      formatter: (r: Audience) => h('span', { class: 'tabular-nums' }, sizeLabel(r))
+    },
+    {
+      prop: 'geofence_m',
+      label: 'Geofence',
+      width: 110,
+      align: 'right',
+      formatter: (r: Audience) =>
+        h('span', { class: 'tabular-nums' }, r.geofence_m != null ? `${r.geofence_m} m` : '—')
+    },
+    {
+      prop: 'created_at',
+      label: 'Created',
+      width: 130,
+      formatter: (r: Audience) => r.created_at ?? '—'
+    },
+    {
+      prop: 'last_used_at',
+      label: 'Last used',
+      width: 130,
+      formatter: (r: Audience) => r.last_used_at ?? '—'
+    }
+  ])
 
   async function load() {
     loading.value = true
     error.value = null
     try {
       const res = await listAudiences()
-      const data = res.data
-      if (Array.isArray(data)) {
-        audiences.value = data
-      } else if (data && typeof data === 'object') {
-        const d = data as { audiences?: Audience[]; items?: Audience[] }
-        audiences.value = d.audiences ?? d.items ?? []
-      } else {
-        audiences.value = []
-      }
+      all.value = normalizeAudiences(res.data)
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : String(e)
     } finally {
@@ -72,104 +129,94 @@
     }
   }
 
-  /**
-   * Row key — `id` is required by the portal-admin Audience pydantic
-   * model (see app/routers/portal_admin.py:185-192), but we still guard
-   * with the array index for defensive correctness against schema drift.
-   */
-  function rowKey(a: Audience, idx: number): string {
-    return a.id ?? `idx-${idx}`
+  function handleCurrentChange(c: number) {
+    pagination.value.current = c
   }
-
-  /**
-   * Format `size_estimate` as a locale-grouped integer. Legacy renderer
-   * at portal.html:6783 does `(a.size||0).toLocaleString()` — we mirror
-   * the toLocaleString convention against the portal-admin
-   * `size_estimate` field. Missing / null → 0 (same as legacy).
-   */
-  function formatSize(a: Audience): string {
-    const n = a.size_estimate ?? 0
-    return n.toLocaleString()
+  function handleSizeChange(s: number) {
+    pagination.value.size = s
+    pagination.value.current = 1
   }
 
   onMounted(load)
 </script>
 
 <template>
-  <div class="kix-audiences p-8 space-y-6">
-    <!-- Page header (mirrors `<div class="ent-page-head">` at portal.html line 1823) -->
+  <div class="kix-audiences p-5 space-y-5">
     <header>
-      <h1 class="text-2xl font-bold">{{ pageTitle }}</h1>
-      <p class="text-sm text-gray-500 mt-1">{{ pageSubtitle }}</p>
+      <h1 class="text-2xl font-bold">{{ t('portal.audiences.title') }}</h1>
+      <p class="text-sm text-gray-500 mt-1">{{ t('portal.audiences.subtitleFull') }}</p>
     </header>
 
-    <!-- Audiences table · 4-state -->
-    <section
-      v-if="loading"
-      class="text-gray-400 text-sm py-6 text-center"
-      data-testid="audiences-loading"
-    >
-      Loading audiences…
-    </section>
+    <div data-testid="audience-kpis" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <article
+        v-for="(card, i) in kpiCards"
+        :key="i"
+        class="art-card relative flex flex-col justify-center h-28 px-5"
+      >
+        <span class="text-g-700 text-sm">{{ card.label }}</span>
+        <span class="text-[26px] font-medium mt-2 tabular-nums leading-tight">{{
+          card.value
+        }}</span>
+        <div
+          class="absolute top-0 bottom-0 right-5 m-auto size-12.5 rounded-xl flex-cc bg-theme/10"
+        >
+          <ArtSvgIcon :icon="card.icon" class="text-xl text-theme" />
+        </div>
+      </article>
+    </div>
 
-    <section
-      v-else-if="error"
-      class="text-red-600 text-sm py-6 text-center"
-      data-testid="audiences-error"
-    >
-      Failed to load: {{ error }}
-    </section>
-
-    <!--
-      Empty-state — mirrors the legacy "No audiences yet" string at
-      portal.html line 6777. The legacy copy also suggests clicking
-      "+ New audience" to create one; we trim that hint until the form
-      lands in a future Plan 4 sub-task.
-    -->
-    <section
-      v-else-if="audiences.length === 0"
-      class="text-gray-400 text-sm py-12 text-center border border-dashed border-gray-200 rounded-xl"
-      data-testid="audiences-empty"
-    >
-      No audiences yet — saved customer segments will appear here.
-    </section>
-
-    <section v-else class="space-y-3" data-testid="audiences-list">
-      <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <table class="w-full text-sm">
-          <thead class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
-            <tr>
-              <th class="px-4 py-2 font-medium">Audience</th>
-              <th class="px-4 py-2 font-medium">Type</th>
-              <th class="px-4 py-2 font-medium text-right">Size</th>
-              <th class="px-4 py-2 font-medium">Created</th>
-              <th class="px-4 py-2 font-medium">Last used</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="(a, idx) in audiences"
-              :key="rowKey(a, idx)"
-              class="border-t border-gray-100 hover:bg-gray-50"
-              data-testid="audience-row"
-            >
-              <td class="px-4 py-2 font-medium text-gray-900">{{ a.name }}</td>
-              <td class="px-4 py-2">
-                <span
-                  v-if="a.type"
-                  class="text-xs px-2 py-0.5 rounded-full inline-block bg-gray-50 text-gray-600"
-                >
-                  {{ a.type }}
-                </span>
-                <span v-else class="text-gray-400">—</span>
-              </td>
-              <td class="px-4 py-2 text-right tabular-nums">{{ formatSize(a) }}</td>
-              <td class="px-4 py-2 text-gray-600">{{ a.created_at ?? '—' }}</td>
-              <td class="px-4 py-2 text-gray-600">{{ a.last_used_at ?? '—' }}</td>
-            </tr>
-          </tbody>
-        </table>
+    <ElCard class="art-table-card" shadow="never">
+      <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+        <div class="flex items-center gap-1 rounded-lg bg-g-100 p-1">
+          <button
+            v-for="f in AUDIENCE_FILTERS"
+            :key="f.key"
+            :data-testid="`aud-${f.key}`"
+            class="px-3 py-1 text-sm rounded-md transition-colors"
+            :class="
+              typeFilter === f.key
+                ? 'bg-white text-theme font-medium shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            "
+            @click="typeFilter = f.key"
+          >
+            {{ f.label }}
+          </button>
+        </div>
+        <ElInput
+          v-model="query"
+          data-testid="audiences-search"
+          placeholder="Search audiences…"
+          clearable
+          class="max-w-xs"
+        />
       </div>
-    </section>
+
+      <div
+        v-if="error"
+        data-testid="audiences-error"
+        class="text-red-600 text-sm py-10 text-center"
+      >
+        Failed to load audiences: {{ error }}
+      </div>
+      <div
+        v-else-if="!loading && all.length === 0"
+        data-testid="audiences-empty"
+        class="text-gray-400 text-sm py-12 text-center"
+      >
+        No audiences yet. Create one to start targeting.
+      </div>
+
+      <ArtTable
+        v-else
+        :loading="loading"
+        :data="paged"
+        :columns="columns"
+        :pagination="pagination"
+        :show-table-header="false"
+        @pagination:current-change="handleCurrentChange"
+        @pagination:size-change="handleSizeChange"
+      />
+    </ElCard>
   </div>
 </template>
