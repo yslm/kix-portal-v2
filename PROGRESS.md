@@ -438,6 +438,37 @@ ArtTable/card restyle done: **Campaigns · Games · Customers**. Remaining singl
 
 ---
 
+## Week 8e: Audiences / AbTests / Rules rebuilt onto ArtTable (2026-06-13)
+
+**Status: DONE — committed, headless-reviewed. Session paused here; resume at Flows next week.**
+
+Three more P1 list views through the restyle template (now 6 done: Campaigns · Games · Customers · Audiences · AbTests · Rules).
+
+### Commit
+
+- 7cbc17e feat(views): rebuild Audiences / AbTests / Rules onto ArtTable
+
+### Per view
+
+- **Audiences**: KPIs Total/Reach/Geofenced/Types; type filter; cols Audience·Type·Size·Geofence·Created·Last used.
+- **AbTests**: KPIs Total/Running/Significant/Shipped; status filter; cols Test·A vs B·Metric·Lift(colour-coded ±)·p-value·Status.
+- **Rules**: KPIs Total/On/Off/Notify; state filter; cols State·Rule·Condition·Action·Scope·Last triggered.
+
+Each: pure `*Model.ts` (unit-tested) + rewritten view spec + demo mock. Wire shapes normalised per real wrappers (audiences|items / ab_tests|abtests|items / rules|automations|items). Tests **250/250**; tsc zero new production errors. Headless confirmed all three render with data + filters work (`#/audiences` 5 rows, `#/abtests` 4, `#/rules` 4).
+
+### Known nit (carry forward)
+
+- `portal.abtests.title` / `portal.rules.title` render the **raw i18n key** (locale translation missing — PRE-EXISTING, the old thin views used the same keys). Add the keys + `pnpm sync:locales` in a future i18n pass. Other views (campaigns/customers/games/audiences) resolve fine.
+- A **flows** demo mock was staged this session (for next week); the still-old Flows view will now show demo cards under `dev:mock`.
+
+### ▶ RESUME HERE NEXT WEEK (breadth track)
+
+**Start at Flows** — `flowsModel.ts` + ArtTable(Flow·Status·Steps·Start·End) + KPI + status filter; mock already in place (`/flows` → `{flows:[…]}`, 4 rows). Task scaffold already created. Then the P2 set: Templates · Cases · VipTiers · Storefront · Billing · Geofences · Creatives · Rewards. Deferred features still logged: Games Smart-Recommend wizard; reconcile Overview `CampaignTable.vue` / Reports `TopCampaignsTable.vue` to real-field-first; abtests/rules i18n keys.
+
+The reusable restyle recipe is in §Week 8b. Verify: `pnpm vitest run` (expect 250+), `pnpm tsc --noEmit 2>&1 | grep -E "error TS" | grep -v "\.vue'"` (expect none), `pnpm dev:mock` + `?brand=demo#/<route>` (routes: /campaigns /games /customer-list /audiences /abtests /rules — note customer-list + abtests have non-obvious paths).
+
+---
+
 ## Future: Production cutover (HELD — deferred until view deepening complete)
 
 Originally Plan 7. Now deferred to after all view-deepening passes finish (Week 7 Overview + Plan 8+ for the remaining 17 views) AND user signs off on visual parity per view.
