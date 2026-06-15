@@ -40,5 +40,10 @@
     "system": "System",
     "operations": "Operations",
     "settings": "Settings"
-  }
+  },
+
+  "portal.cases.subtitle": "Per-prospect research + branded 12-slide pitch deck. Three-source verified · all claims traceable to file:line.",
+  "portal.geofences.subtitle": "Each store is a geofence — staff QR, redeem, and location-trigger campaigns all key off this list.",
+  "portal.creatives.title": "Creatives",
+  "portal.creatives.subtitle": "Logos, hero images, color tokens, and brand voice — auto-embedded into every game you ship."
 }

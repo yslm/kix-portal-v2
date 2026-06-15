@@ -482,6 +482,40 @@ const MOCKS: Record<string, unknown> = {
       }
     ]
   },
+  // Creatives — settings-router path (brand in URL; the view calls
+  // listCreatives() with no arg → demo_brand). Canonical { items } wrapper
+  // with the { formatted_display } timestamp. Mixed image/video + sizes.
+  '/api/v1/portal/settings/creatives/demo_brand': {
+    items: [
+      {
+        asset_id: 'cr_logo',
+        filename: 'brand-logo-primary.png',
+        kind: 'image',
+        bytes: 84992,
+        uploaded_at: { formatted_display: 'Jun 2, 2026' }
+      },
+      {
+        asset_id: 'cr_hero',
+        filename: 'ramadan-hero-banner.jpg',
+        kind: 'image',
+        bytes: 2306867,
+        uploaded_at: { formatted_display: 'Jun 5, 2026' }
+      },
+      {
+        asset_id: 'cr_promo',
+        filename: 'spin-wheel-promo.mp4',
+        kind: 'video',
+        bytes: 14680064,
+        uploaded_at: { formatted_display: 'Jun 8, 2026' }
+      },
+      {
+        asset_id: 'cr_sticker',
+        filename: 'scratch-sticker-pack.png',
+        bytes: 40960,
+        uploaded_at: { formatted_display: 'Jun 10, 2026' }
+      }
+    ]
+  },
   // 14-day cohort — bare CohortRow[] (newest last).
   '/api/v1/portal-admin/reports/cohort': [
     { cohort_day: '2026-05-30', new_customers: 7 },
