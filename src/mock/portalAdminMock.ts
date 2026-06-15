@@ -415,6 +415,39 @@ const MOCKS: Record<string, unknown> = {
       { slug: 'arcade-runner' }
     ]
   },
+  // Case Studio prospects — canonical { prospects } wrapper. Mixed
+  // research_status so the filter + KPIs have signal.
+  '/api/v1/portal-admin/case-studio/prospects': {
+    prospects: [
+      {
+        prospect_id: 'nana',
+        company_name: 'Nana',
+        primary_url: 'https://nana.sa',
+        tagline: 'Saudi q-commerce leader · 600+ SKUs · 30-min delivery',
+        research_status: 'complete'
+      },
+      {
+        prospect_id: 'kopi_kenangan',
+        company_name: 'Kopi Kenangan',
+        primary_url: 'https://kopikenangan.com',
+        tagline: 'Indonesia grab-and-go coffee · 800+ outlets',
+        research_status: 'complete'
+      },
+      {
+        prospect_id: 'starbucks_sg',
+        company_name: 'Starbucks SG',
+        primary_url: 'https://starbucks.com.sg',
+        tagline: 'Premium coffee chain · loyalty-led',
+        research_status: 'in_progress'
+      },
+      {
+        prospect_id: 'new_seed',
+        company_name: 'Fresh Bowl Co',
+        primary_url: 'https://freshbowl.co',
+        research_status: 'draft'
+      }
+    ]
+  },
   // 14-day cohort — bare CohortRow[] (newest last).
   '/api/v1/portal-admin/reports/cohort': [
     { cohort_day: '2026-05-30', new_customers: 7 },

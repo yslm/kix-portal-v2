@@ -1,85 +1,63 @@
 <script setup lang="ts">
   /**
-   * Cases view (Case Studio prospects grid) — Plan 5 Task 2.
+   * Cases view (Case Studio prospects grid) — rebuilt onto art-design-pro
+   * components (Week 8h).
    *
-   * Source: `kix-platform/landing/portal.html`, `<section id="view-cases">`
-   * (lines 1730-1748) + the legacy fetcher `kixLoadCases()` (~line 8461)
-   * + the inlined renderer at ~line 8475-8488. The legacy section bundles
-   * in one place:
+   * Source: portal.html #view-cases (lines 1730-1748), fetcher
+   * `kixLoadCases()` (~line 8461). Rebuilds the prospects grid as polished
+   * `.art-card` cards (company + status badge + url + tagline) plus a
+   * card-list KPI strip and a status filter + search. Logic in
+   * `cases/casesModel.ts`.
    *
-   *   - Page header + subtitle ("Per-prospect research + branded 12-slide
-   *     pitch deck. Three-source verified · all claims traceable to
-   *     file:line.") at line 1733-1734
-   *   - "+ New case" primary CTA in the top-right (line 1736,
-   *     `kixNewCase()` prompts for name/url/vertical, POSTs to create a
-   *     draft seed)
-   *   - Hero gradient feature card (line 1739-1743) — a pure-copy
-   *     explainer block, no data
-   *   - Prospects grid (`#cases-grid` at line 1745) — auto-fill cards
-   *     rendered by the inlined loop in `kixLoadCases()`
-   *   - Per-card content: company_name + status pill, primary_url, tagline,
-   *     and two CTAs ("📊 Open deck" → `kixOpenDeck()`; "↻ Regenerate" →
-   *     `kixCasesRegenerate()`, both POST to `.../render-deck`)
+   * Endpoint: GET /api/v1/portal-admin/case-studio/prospects (platform
+   * sales tool, no ?brand=). Real fields: prospect_id / company_name /
+   * primary_url / tagline / research_status.
    *
-   * Plan 5 T2 ports ONLY the page header + a single-page prospects grid
-   * of cards (title · primary_url subtitle · tagline · research_status
-   * badge). Everything else is DEFERRED:
-   *   - "+ New case" CTA + the `POST /case-studio/prospects` endpoint
-   *   - Hero gradient feature card (pure copy — no data, skipped to keep
-   *     the four-state pattern clean)
-   *   - "📊 Open deck" CTA + the HEAD/POST `/render-deck` dance
-   *   - "↻ Regenerate" CTA + the `/render-deck` POST
-   *   - Detail panel — the per-prospect deep profile only exists as the
-   *     rendered HTML deck under `/landing/decks/<id>/`; the portal has
-   *     no in-app detail surface yet, so there's nothing to defer to here
-   *
-   * Same template as Plan 3/4/5 T1: port a thin honest slice of a real
-   * endpoint, defer the rest behind a clear comment. Visually closer to
-   * the Templates catalog (card grid) than to the Rules/AbTests tables.
-   *
-   * State machine: loading → (data | empty | error). Empty-state copy
-   * mirrors the legacy fallback at portal.html line 8470 — "No prospects
-   * yet. Add a seed JSON under `app/data/prospects/`."; we surface the
-   * same message in the v2 view as a flat placeholder. The legacy hero
-   * card's spinner glyph is replaced by flat text to match the
-   * Templates / Rules / AbTests convention.
-   *
-   * Endpoint: GET /api/v1/portal-admin/case-studio/prospects.
-   * `KIX_CASES_API` is `/api/v1/portal-admin/case-studio` (portal.html
-   * line 8460); the prospects list hangs off that router. Unlike the
-   * brand-scoped endpoints (Templates / Audiences / Rules / AbTests),
-   * Case Studio is a platform-internal sales tool keyed by `prospect_id`
-   * — no `?brand=` param, no `get_current_brand` dependency.
+   * DEFERRED (not a restyle): "+ New case" create flow, "Open deck" /
+   * "Regenerate" render-deck dance, per-prospect detail (only exists as
+   * the rendered HTML deck under /landing/decks/<id>/).
    */
   import { computed, onMounted, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { listCases } from '@/api/portal-admin/cases'
   import type { CaseStudy } from '@/api/portal-admin/types'
   import StatusBadge from '@/components/StatusBadge.vue'
+  import {
+    normalizeCases,
+    displayName,
+    statusBadge,
+    caseKpis,
+    filterCases,
+    CASE_FILTERS,
+    type CaseFilterKey
+  } from './cases/casesModel'
 
   const { t } = useI18n()
 
   const loading = ref(true)
   const error = ref<string | null>(null)
-  const cases = ref<CaseStudy[]>([])
+  const all = ref<CaseStudy[]>([])
+  const filter = ref<CaseFilterKey>('all')
+  const query = ref('')
 
-  const pageTitle = computed(() => t('portal.cases.title'))
-  const pageSubtitle = computed(() => t('portal.cases.subtitle'))
+  const filtered = computed(() =>
+    filterCases(all.value, { filter: filter.value, query: query.value })
+  )
+
+  const kpis = computed(() => caseKpis(all.value))
+  const kpiCards = computed(() => [
+    { icon: 'ri:briefcase-line', label: 'Total prospects', value: kpis.value.total },
+    { icon: 'ri:checkbox-circle-line', label: 'Complete', value: kpis.value.complete },
+    { icon: 'ri:loader-4-line', label: 'In progress', value: kpis.value.inProgress },
+    { icon: 'ri:draft-line', label: 'Draft', value: kpis.value.draft }
+  ])
 
   async function load() {
     loading.value = true
     error.value = null
     try {
       const res = await listCases()
-      const data = res.data
-      if (Array.isArray(data)) {
-        cases.value = data
-      } else if (data && typeof data === 'object') {
-        const d = data as { prospects?: CaseStudy[]; items?: CaseStudy[] }
-        cases.value = d.prospects ?? d.items ?? []
-      } else {
-        cases.value = []
-      }
+      all.value = normalizeCases(res.data)
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : String(e)
     } finally {
@@ -87,116 +65,108 @@
     }
   }
 
-  /**
-   * Mirrors the legacy renderer's display chain (portal.html line 8479):
-   * the legacy code reads `p.company_name` raw and trusts the seed JSON
-   * schema. We add defensive fallbacks (prospect_id → "Prospect") so a
-   * malformed seed doesn't render an empty card title.
-   */
-  function displayName(c: CaseStudy): string {
-    return c.company_name || c.prospect_id || 'Prospect'
-  }
-
-  /**
-   * Row key — `prospect_id` is the canonical identifier (the legacy
-   * renderer uses it as the click target in `kixOpenDeck(...)` and
-   * `kixCasesRegenerate(...)`). Array-index fallback is defensive
-   * against schema drift, matching the convention in Templates / Rules /
-   * Audiences / AbTests.
-   */
   function rowKey(c: CaseStudy, idx: number): string {
     return c.prospect_id ?? `idx-${idx}`
-  }
-
-  /**
-   * Research-status pill — maps the server's `research_status` onto the
-   * shared `<StatusBadge>` colour map. The legacy renderer hard-codes a
-   * binary green-vs-amber split: `'complete'` → green, anything else →
-   * amber (portal.html line 8476-8477). We mirror that intent through
-   * the StatusBadge palette:
-   *   - 'complete'    → 'active'  (green pill)
-   *   - 'draft'       → 'draft'   (gray pill — the explicit draft state
-   *                                from `create_draft_prospect()`)
-   *   - anything else → 'pending' (amber pill — matches the legacy
-   *                                "in-progress" colour)
-   *   - undefined     → undefined → suppressed via `v-if` so the card
-   *                                stays clean when no signal is present
-   *
-   * The deferred two-state "Open deck" / "Regenerate" gating (which the
-   * legacy view also gates on research_status via the publish-gate in
-   * `render_deck`) belongs with the CTA work in a later task.
-   */
-  function statusBadge(c: CaseStudy): string | undefined {
-    const s = c.research_status
-    if (!s) return undefined
-    if (s === 'complete') return 'active'
-    if (s === 'draft') return 'draft'
-    return 'pending'
   }
 
   onMounted(load)
 </script>
 
 <template>
-  <div class="kix-cases p-8 space-y-6">
-    <!-- Page header (mirrors the legacy `.page-title` + subtitle at portal.html line 1733-1734) -->
+  <div class="kix-cases p-5 space-y-5">
     <header>
-      <h1 class="text-2xl font-bold">{{ pageTitle }}</h1>
-      <p class="text-sm text-gray-500 mt-1">{{ pageSubtitle }}</p>
+      <h1 class="text-2xl font-bold">{{ t('portal.cases.title') }}</h1>
+      <p class="text-sm text-gray-500 mt-1">{{ t('portal.cases.subtitle') }}</p>
     </header>
 
-    <!-- Prospects grid · 4-state -->
-    <section
-      v-if="loading"
-      class="text-gray-400 text-sm py-6 text-center"
-      data-testid="cases-loading"
-    >
-      Loading prospects…
-    </section>
+    <!-- KPI strip — canonical art-design-pro card-list anatomy -->
+    <div data-testid="case-kpis" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <article
+        v-for="(card, i) in kpiCards"
+        :key="i"
+        class="art-card relative flex flex-col justify-center h-28 px-5"
+      >
+        <span class="text-g-700 text-sm">{{ card.label }}</span>
+        <span class="text-[26px] font-medium mt-2 tabular-nums leading-tight">{{
+          card.value
+        }}</span>
+        <div
+          class="absolute top-0 bottom-0 right-5 m-auto size-12.5 rounded-xl flex-cc bg-theme/10"
+        >
+          <ArtSvgIcon :icon="card.icon" class="text-xl text-theme" />
+        </div>
+      </article>
+    </div>
 
-    <section
-      v-else-if="error"
-      class="text-red-600 text-sm py-6 text-center"
-      data-testid="cases-error"
-    >
-      Failed to load: {{ error }}
-    </section>
+    <!-- Toolbar -->
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <div class="flex items-center gap-1 rounded-lg bg-g-100 p-1">
+        <button
+          v-for="f in CASE_FILTERS"
+          :key="f.key"
+          :data-testid="`case-${f.key}`"
+          class="px-3 py-1 text-sm rounded-md transition-colors"
+          :class="
+            filter === f.key
+              ? 'bg-white text-theme font-medium shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          "
+          @click="filter = f.key"
+        >
+          {{ f.label }}
+        </button>
+      </div>
+      <ElInput
+        v-model="query"
+        data-testid="cases-search"
+        placeholder="Search prospects…"
+        clearable
+        class="max-w-xs"
+      />
+    </div>
 
-    <!--
-      Empty-state — mirrors the legacy "No prospects yet. Add a seed JSON
-      under app/data/prospects/." copy at portal.html line 8470. The
-      deferred "+ New case" CTA will own its own success-state copy later.
-    -->
-    <section
-      v-else-if="cases.length === 0"
-      class="text-gray-400 text-sm py-12 text-center border border-dashed border-gray-200 rounded-xl"
+    <!-- States -->
+    <div v-if="loading" class="text-gray-400 text-sm py-10 text-center">Loading prospects…</div>
+
+    <div v-else-if="error" data-testid="cases-error" class="text-red-600 text-sm py-10 text-center">
+      Failed to load prospects: {{ error }}
+    </div>
+
+    <div
+      v-else-if="all.length === 0"
       data-testid="cases-empty"
+      class="art-card flex flex-col items-center justify-center text-center py-16 px-6"
     >
-      No prospects yet.
-    </section>
+      <div class="size-16 rounded-2xl flex-cc bg-theme/10 mb-4">
+        <ArtSvgIcon icon="ri:briefcase-line" class="text-3xl text-theme" />
+      </div>
+      <h2 class="text-xl font-semibold">No prospects yet</h2>
+      <p class="text-sm text-gray-500 mt-2 max-w-md">
+        Add a prospect to generate a three-source verified pitch deck.
+      </p>
+    </div>
 
-    <section
+    <!-- Prospect card grid -->
+    <div
       v-else
       class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
       data-testid="cases-grid"
     >
       <article
-        v-for="(c, idx) in cases"
+        v-for="(c, idx) in filtered"
         :key="rowKey(c, idx)"
-        class="bg-white border border-gray-200 rounded-lg p-4 flex flex-col gap-2"
+        class="art-card p-5 flex flex-col gap-2"
         data-testid="case-card"
       >
         <div class="flex items-start justify-between gap-2">
-          <h3 class="font-semibold text-gray-900">{{ displayName(c) }}</h3>
+          <h3 class="font-semibold text-gray-900 leading-tight">{{ displayName(c) }}</h3>
           <StatusBadge v-if="statusBadge(c)" :status="statusBadge(c)" />
         </div>
         <p v-if="c.primary_url" class="text-xs text-gray-400 font-mono break-all">
           {{ c.primary_url }}
         </p>
-        <p v-if="c.tagline" class="text-sm text-gray-600 leading-relaxed">
-          {{ c.tagline }}
-        </p>
+        <p v-if="c.tagline" class="text-sm text-gray-600 leading-relaxed">{{ c.tagline }}</p>
       </article>
-    </section>
+    </div>
   </div>
 </template>
