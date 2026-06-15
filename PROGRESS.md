@@ -630,6 +630,46 @@ Verify: `pnpm vitest run` (expect 334+), `pnpm tsc --noEmit 2>&1 | grep -E "erro
 
 ---
 
+## Week 9: Deferred FEATURES — all creation/editor flows shipped (2026-06-15)
+
+**Status: DONE — every deferred stateful feature is built, each headless-reviewed, committed.** User went auto-mode ("做完一个继续下一个直到全部完成"). The breadth track (every view on art-design-pro) was already complete; this session built the remaining FEATURES the rebuilds intentionally stubbed.
+
+### Commits
+
+| Commit  | Feature                                                                             |
+| ------- | ----------------------------------------------------------------------------------- |
+| 6078848 | feat(games): Smart-Recommend creation wizard + IDE customize modal                  |
+| 5a9e03a | feat(builder): 6 module sub-forms + live re-score + publish flow                    |
+| 12de540 | feat(flows): 4-step wizard (template → customize → simulate → publish)              |
+| ab9bb26 | feat(rewards): live Game-links / Issuance / Redemption tabs + template editor       |
+| 421a985 | feat(editors): VipTiers ladder editor + Geofences add-store + Cases new+deck        |
+| 164b60b | feat(editors): Billing top-up + payment method, Storefront editor, Creatives upload |
+| bde40c1 | refactor(overview,reports): campaign tables real-field-first (reconcile)            |
+
+### What shipped (each backed by a verified real endpoint)
+
+- **Games wizard** (`games/CreateGameWizard.vue` + `CustomizeModal.vue`) — describe → POST /games/recommend → pick → POST /games/build → poll /games/orders/{id} → launch checklist. Fail-soft: 503 → starter trio; R7 sync path skips polling; 5-min timeout → Retry. Customize opens the gamification IDE iframe (postMessage-driven refresh).
+- **Builder sub-forms** (`builder/ModuleEditor.vue` + `builderForms.ts`) — 6 module editors (game/voucher/rule/schedule/safety/tournament) with real fields; live re-score on save; Save-draft (localStorage) + Publish (rule/schedule configure → /builder/publish, KYC 403 gate, navigate to Campaigns).
+- **Flows wizard** (`flows/CreateFlowWizard.vue`) — templates grid → create → customize (name/dates + step preview) → simulate (backend funnel + cost cards) → publish.
+- **Rewards tabs** (`rewards/GameLinksTab|IssuanceTab|RedemptionTab.vue` + `NewTemplateDialog.vue`) — coupon binding PUT, issuance summary, voucher lookup+redeem, template create (POST /coupon-templates) + delete.
+- **Small editors** — VipTiers ladder PUT, Geofences store register, Cases prospect create + deck render overlay, Billing wallet top-up + add-card, Storefront configure, Creatives multipart upload.
+
+### Pattern (held across all 7)
+
+Pure model (`*Model.ts` / `*Forms.ts`) for body-assembly + validation + normalisation (unit-tested, no mount) → dialog/wizard component (wiring spec, ElDialog-stubbed) → API fn + wire types → demo payloads in `portalAdminMock.ts` → view CTA opens it, reloads on success. NO-FAKE-DATA throughout: every field maps to a verified backend contract (explored against `kix-platform` portal.html + routers before building).
+
+### Result
+
+- Tests **432/432** (was 334 at session start; +98). tsc zero new production errors throughout.
+- Headless `?brand=demo` review for each: Games 4 steps, Builder editor+publish, Flows funnel+publish, Rewards 4 tabs, all 6 editor dialogs mount native to art-design-pro.
+- Notes: the demo guide-tooltip (raw `topBar.guide.*` i18n keys, pre-existing) floats top-right and overlaps header CTAs in screenshots — cosmetic demo artifact, not a regression.
+
+### ▶ STATE OF THE PORTAL
+
+Every merchant-facing view is rebuilt AND every deferred creation/editor flow is built. **Production cutover (below) is the natural next milestone** once the user signs off on parity. Remaining nice-to-haves (not blocking): Templates Try-demo (no backend contract found), Geofences map pin + address autocomplete (Mapbox token-gated), per-row Edit/Delete on stores, Rewards QR rotation.
+
+---
+
 ## Future: Production cutover (HELD — deferred until view deepening complete)
 
 Originally Plan 7. Now deferred to after all view-deepening passes finish (Week 7 Overview + Plan 8+ for the remaining 17 views) AND user signs off on visual parity per view.
