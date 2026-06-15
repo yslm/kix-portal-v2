@@ -501,6 +501,52 @@ Verify: `pnpm vitest run` (expect 263+), `pnpm tsc --noEmit 2>&1 | grep -E "erro
 
 ---
 
+## Week 8g–8j: P2 list/card views rebuilt — Templates · Cases · Geofences · Creatives (2026-06-15)
+
+**Status: DONE — 4 P2 views committed, each headless-reviewed.** Continues the restyle breadth track through the P2 set's clean list/card candidates. Plus a real i18n override fix (no longer deferred).
+
+### Commits
+
+- 0e77e98 feat(templates): rebuild Templates onto art-design-pro card gallery
+- 1412d8d feat(cases): rebuild Case Studio prospects onto art-design-pro cards
+- ce0228a feat(geofences): rebuild stores onto ArtTable + KPI strip + geocoded filter
+- 33ec83a feat(creatives): rebuild asset library onto art-design-pro cards + fix i18n
+
+### Per view (all: pure `*Model.ts` unit-tested + rewritten view spec + demo mock)
+
+| View | Shape | KPIs | Filter | Notes |
+| --- | --- | --- | --- | --- |
+| **Templates** | card gallery | Total / Ready / Catalog / Game types | Ready/Catalog + search | gradient+emoji cover keyed by slug (shared palette w/ Games; dedup deferred); card→/builder |
+| **Cases** | card grid | Total / Complete / In progress / Draft | status + search | status badge keeps legacy binary colour intent |
+| **Geofences** | ArtTable | Total / Active / Geocoded / Avg radius | Geocoded/Pending + search | filter is a REAL dimension (place_id or lat+lng), not fake — legacy hard-coded "Active" |
+| **Creatives** | card gallery | Total / Images / Videos / Total size | kind + search | settings-router path; size KB→MB; legacy timestamp wrapper |
+
+### i18n override fix (commit 33ec83a — the sanctioned mechanism, NOT deferred)
+
+`portal.creatives.title/subtitle` were MISSING from the kix-platform SSOT in **every** wired locale (would render a raw H1); `portal.cases.subtitle` / `portal.geofences.subtitle` were missing from the wired en-US/zh-Hans (present only in the un-wired en-SG/zh-CN). Added all four as **portal-layer overrides** in `locales/portal/{en,zh}.json` — `src/locales/index.ts` deep-merges portal OVER synced, and `pnpm sync:locales` only rsyncs `locales/synced/`, so the overrides survive. Verified on-screen (素材库 H1 + resolved subtitles). This clears the cases/geofences raw-key nits flagged in their own commits, and is the pattern to use for the still-open abtests/rules raw-key nit.
+
+### Result
+
+- Tests **306/306** (250 → 263 Flows → 274 Templates → 284 Cases → 295 Geofences → 306 Creatives). tsc zero new production errors throughout.
+- Headless `?brand=demo#/<route>` confirmed every view renders native to art-design-pro with working KPIs + filters.
+
+### ▶ RESUME HERE NEXT (breadth track)
+
+The restyle template is now applied to **all 7 P1 list views + 4 clean P2 list/card views** (Templates · Cases · Geofences · Creatives). **Remaining P2 are structurally different — NOT simple list/card, so the rote template does not fit cleanly; each needs per-view judgment:**
+
+- **VipTiers** (262 lines) — tier ladder; likely a card row per tier (could reuse card-list anatomy).
+- **Storefront** (335 lines) — brand-profile EDITOR (form: contact / socials / custom sections). A form, not a list — restyle = ElForm + art-card sections, not ArtTable.
+- **Billing** (324 lines) — wallet balance + spend dashboard. Closer to Overview's metric cards + a spend table than to a list.
+- **Rewards** (297 lines) — consolidated 4-TAB view (vouchers + coupons-qr + game-rewards + prizes). Already multi-section; restyle = ElTabs + per-tab ArtTable/cards.
+
+Recommend confirming direction with the user before forcing the list/card template onto these four. Also still open: **Builder** entry view (thin).
+
+Deferred features still logged: Games Smart-Recommend wizard; Flows 4-step wizard; Templates sort/rank/detail/Try-demo; reconcile Overview `CampaignTable.vue` / Reports `TopCampaignsTable.vue` to real-field-first; **abtests/rules i18n raw-key** (now fixable via the portal-override mechanism proven in 33ec83a).
+
+Verify: `pnpm vitest run` (expect 306+), `pnpm tsc --noEmit 2>&1 | grep -E "error TS" | grep -v "\.vue'"` (none), `pnpm dev:mock` + `?brand=demo#/<route>` (routes added this batch: /templates /cases /geofences /creatives).
+
+---
+
 ## Future: Production cutover (HELD — deferred until view deepening complete)
 
 Originally Plan 7. Now deferred to after all view-deepening passes finish (Week 7 Overview + Plan 8+ for the remaining 17 views) AND user signs off on visual parity per view.
