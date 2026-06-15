@@ -51,3 +51,12 @@ export const listCreatives = (brandId?: string) =>
   http.get<CreativesListResponse>(
     `/api/v1/portal/settings/creatives/${encodeURIComponent(brandId || 'demo_brand')}`
   )
+
+/**
+ * POST /assets/upload — multipart upload (deferred feature, now shipped;
+ * kixUploadPrizeImage ~5935). Returns { asset_id, cdn_url, ... }.
+ */
+export const uploadAsset = (form: FormData) =>
+  http.post<{ asset_id?: string; cdn_url?: string; name?: string }>('/api/v1/assets/upload', form, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })

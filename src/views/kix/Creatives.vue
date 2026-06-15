@@ -31,8 +31,11 @@
     CREATIVE_FILTERS,
     type CreativeFilterKey
   } from './creatives/creativesModel'
+  import UploadAssetDialog from './creatives/UploadAssetDialog.vue'
 
   const { t } = useI18n()
+
+  const uploadOpen = ref(false)
 
   const loading = ref(true)
   const error = ref<string | null>(null)
@@ -78,9 +81,14 @@
 
 <template>
   <div class="kix-creatives p-5 space-y-5">
-    <header>
-      <h1 class="text-2xl font-bold">{{ t('portal.creatives.title') }}</h1>
-      <p class="text-sm text-gray-500 mt-1">{{ t('portal.creatives.subtitle') }}</p>
+    <header class="flex items-end justify-between gap-4 flex-wrap">
+      <div>
+        <h1 class="text-2xl font-bold">{{ t('portal.creatives.title') }}</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ t('portal.creatives.subtitle') }}</p>
+      </div>
+      <ElButton type="primary" data-testid="creatives-upload" @click="uploadOpen = true">
+        + Upload asset
+      </ElButton>
     </header>
 
     <div data-testid="creative-kpis" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -180,5 +188,7 @@
         </div>
       </article>
     </div>
+
+    <UploadAssetDialog v-model="uploadOpen" @uploaded="load" />
   </div>
 </template>

@@ -73,3 +73,28 @@ export const listInvoices = async (): Promise<Invoice[]> => {
   if (data && Array.isArray(data.invoices)) return data.invoices
   return []
 }
+
+/**
+ * POST /portal-admin/wallet/topup — add funds (deferred feature, now shipped;
+ * kixTopupWallet ~3722). 402 → { detail: { error: 'payment_method_required',
+ * next } } when no card on file. amount_sgd 0–10000.
+ */
+export const topupWallet = (amountSgd: number) =>
+  http.post('/api/v1/portal-admin/wallet/topup', { amount_sgd: amountSgd })
+
+/**
+ * POST /portal/settings/payment-methods/{brand} — add a card
+ * (kixAddPaymentMethod ~6215). brand in the path.
+ */
+export const addPaymentMethod = (
+  brandId: string,
+  body: {
+    type: string
+    brand: string
+    last4: string
+    holder_name: string
+    exp_month: number
+    exp_year: number
+    set_default?: boolean
+  }
+) => http.post(`/api/v1/portal/settings/payment-methods/${encodeURIComponent(brandId)}`, body)

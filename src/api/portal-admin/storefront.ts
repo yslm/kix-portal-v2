@@ -32,3 +32,10 @@ import type { StorefrontResponse } from './types'
  */
 export const fetchStorefront = (brandId: string) =>
   http.get<StorefrontResponse>(`/api/v1/storefront/${encodeURIComponent(brandId)}`)
+
+/**
+ * POST /storefront/{brand}/configure — save the public profile (deferred
+ * editor, now shipped; StorefrontConfig, storefront.py ~262). brand in path.
+ */
+export const configureStorefront = (brandId: string, body: Record<string, unknown>) =>
+  http.post(`/api/v1/storefront/${encodeURIComponent(brandId)}/configure`, body)

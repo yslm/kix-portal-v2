@@ -32,9 +32,11 @@
     embedSnippet as embedOf,
     storefrontKpis
   } from './storefront/storefrontModel'
+  import StorefrontEditorDialog from './storefront/StorefrontEditorDialog.vue'
 
   const { t } = useI18n()
 
+  const editorOpen = ref(false)
   const loading = ref(true)
   const error = ref<string | null>(null)
   const profile = ref<StorefrontProfile | null>(null)
@@ -105,9 +107,14 @@
         <h1 class="text-2xl font-bold">{{ t('portal.storefront.title') }}</h1>
         <p class="text-sm text-gray-500 mt-1">{{ t('portal.storefront.subtitle') }}</p>
       </div>
-      <ElButton data-testid="storefront-open-public" @click="openPublicPage">
-        Open public page ↗
-      </ElButton>
+      <div class="flex items-center gap-2">
+        <ElButton type="primary" data-testid="storefront-edit" @click="editorOpen = true">
+          Edit storefront
+        </ElButton>
+        <ElButton data-testid="storefront-open-public" @click="openPublicPage">
+          Open public page ↗
+        </ElButton>
+      </div>
     </header>
 
     <div v-if="error" data-testid="storefront-error" class="text-red-600 text-sm py-10 text-center">
@@ -194,5 +201,7 @@
         </ElCard>
       </div>
     </template>
+
+    <StorefrontEditorDialog v-model="editorOpen" :profile="profile" @saved="load" />
   </div>
 </template>

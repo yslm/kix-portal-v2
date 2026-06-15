@@ -31,9 +31,13 @@
     spend30Display,
     isEmpty
   } from './billing/billingModel'
+  import TopUpDialog from './billing/TopUpDialog.vue'
+  import PaymentMethodDialog from './billing/PaymentMethodDialog.vue'
 
   const { t } = useI18n()
 
+  const topupOpen = ref(false)
+  const payOpen = ref(false)
   const loading = ref(true)
   const error = ref<string | null>(null)
   const wallet = ref<WalletBalance | null>(null)
@@ -142,9 +146,17 @@
 
 <template>
   <div class="kix-billing p-5 space-y-5">
-    <header>
-      <h1 class="text-2xl font-bold">{{ t('portal.billing.title') }}</h1>
-      <p class="text-sm text-gray-500 mt-1">{{ t('portal.billing.subtitle') }}</p>
+    <header class="flex items-end justify-between gap-4 flex-wrap">
+      <div>
+        <h1 class="text-2xl font-bold">{{ t('portal.billing.title') }}</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ t('portal.billing.subtitle') }}</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <ElButton data-testid="billing-payment" @click="payOpen = true">Payment methods</ElButton>
+        <ElButton type="primary" data-testid="billing-topup" @click="topupOpen = true"
+          >Top up</ElButton
+        >
+      </div>
     </header>
 
     <div v-if="error" data-testid="billing-error" class="text-red-600 text-sm py-10 text-center">
@@ -217,5 +229,8 @@
         />
       </ElCard>
     </template>
+
+    <TopUpDialog v-model="topupOpen" @done="load" />
+    <PaymentMethodDialog v-model="payOpen" @added="load" />
   </div>
 </template>

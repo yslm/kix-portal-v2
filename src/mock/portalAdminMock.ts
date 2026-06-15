@@ -721,6 +721,22 @@ const MOCKS: Record<string, unknown> = {
       }
     ]
   },
+  // Billing · top-up (POST /wallet/topup) + add payment method.
+  '/api/v1/portal-admin/wallet/topup': {
+    balance_sgd: 2092.5,
+    auto_recharge_at_sgd: 200,
+    burn_per_day_sgd: 44.46,
+    runway_days: 47
+  },
+  '/api/v1/portal/settings/payment-methods/demo': { ok: true },
+  // Storefront · configure (POST /storefront/{brand}/configure).
+  '/api/v1/storefront/demo/configure': { ok: true },
+  // Creatives · asset upload (POST /assets/upload).
+  '/api/v1/assets/upload': {
+    asset_id: 'ast_demo_new',
+    cdn_url: '/cdn/demo/new-asset.png',
+    name: 'new-asset.png'
+  },
   // Rewards · Issuance tab — issued/claimed/redeemed per template.
   '/api/v1/coupons/issuance-summary': {
     ok: true,
