@@ -51,5 +51,10 @@
   "portal.cases.subtitle": "Per-prospect research + branded 12-slide pitch deck. Three-source verified · all claims traceable to file:line.",
   "portal.geofences.subtitle": "Each store is a geofence — staff QR, redeem, and location-trigger campaigns all key off this list.",
   "portal.creatives.title": "Creatives",
-  "portal.creatives.subtitle": "Logos, hero images, color tokens, and brand voice — auto-embedded into every game you ship."
+  "portal.creatives.subtitle": "Logos, hero images, color tokens, and brand voice — auto-embedded into every game you ship.",
+  "portal.abtests.title": "A/B Tests",
+  "portal.abtests.subtitle": "Run controlled experiments — compare variants and ship the winner.",
+  "portal.rules.title": "Rules",
+  "portal.rules.subtitle": "Automation rules — trigger actions automatically when conditions are met.",
+  "portal.builder.opp.good": "Looking strong — no obvious gaps. Add modules to launch."
 }

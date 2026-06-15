@@ -51,5 +51,10 @@
   "portal.cases.subtitle": "针对每位潜在客户的调研 + 品牌化 12 页路演 Deck。三源验证 · 所有论断可追溯到 file:line。",
   "portal.geofences.subtitle": "每个门店都是一个地理围栏 —— 员工 QR、核销与位置触发活动都以此列表为准。",
   "portal.creatives.title": "素材库",
-  "portal.creatives.subtitle": "Logo、主视觉、品牌色与品牌语调 —— 自动嵌入你发布的每一个游戏。"
+  "portal.creatives.subtitle": "Logo、主视觉、品牌色与品牌语调 —— 自动嵌入你发布的每一个游戏。",
+  "portal.abtests.title": "A/B 测试",
+  "portal.abtests.subtitle": "运行受控实验 —— 对比变体、上线胜出方案。",
+  "portal.rules.title": "规则",
+  "portal.rules.subtitle": "自动化规则 —— 条件满足时自动触发动作。",
+  "portal.builder.opp.good": "状态良好 —— 暂无明显缺口。添加模块即可上线。"
 }
