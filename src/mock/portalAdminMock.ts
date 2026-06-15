@@ -516,6 +516,28 @@ const MOCKS: Record<string, unknown> = {
       }
     ]
   },
+  // VIP tiers — ladder { tiers } + distribution { sampled_members,
+  // distribution } pair. Members descend by tier so the bars vary.
+  '/api/v1/portal-admin/loyalty-tiers': {
+    brand_id: 'demo',
+    custom: true,
+    tiers: [
+      { name: 'Bronze', min_xp: 0, perk: '5% off every play' },
+      { name: 'Silver', min_xp: 500, perk: 'Free drink voucher monthly' },
+      { name: 'Gold', min_xp: 2000, perk: 'Double points weekends' },
+      { name: 'Platinum', min_xp: 5000, perk: 'Concierge + early drops' }
+    ]
+  },
+  '/api/v1/portal-admin/loyalty-tiers/distribution': {
+    brand_id: 'demo',
+    sampled_members: 412,
+    distribution: [
+      { name: 'Bronze', min_xp: 0, perk: '5% off every play', members: 268 },
+      { name: 'Silver', min_xp: 500, perk: 'Free drink voucher monthly', members: 96 },
+      { name: 'Gold', min_xp: 2000, perk: 'Double points weekends', members: 41 },
+      { name: 'Platinum', min_xp: 5000, perk: 'Concierge + early drops', members: 7 }
+    ]
+  },
   // 14-day cohort — bare CohortRow[] (newest last).
   '/api/v1/portal-admin/reports/cohort': [
     { cohort_day: '2026-05-30', new_customers: 7 },
