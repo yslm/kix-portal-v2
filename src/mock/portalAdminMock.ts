@@ -401,6 +401,20 @@ const MOCKS: Record<string, unknown> = {
       { flow_id: 'f-4', name: 'Payday blast (draft)', status: 'draft', steps_count: 2 }
     ]
   },
+  // Templates — canonical { games, total, reskin_count } wrapper. No
+  // cover_url → exercises the slug-keyed gradient+emoji fallback. Mixed
+  // reskinable so the Ready/Catalog filter + KPIs have signal.
+  '/api/v1/portal-admin/games/templates': {
+    total: 5,
+    reskin_count: 3,
+    games: [
+      { slug: 'scratch-and-win', name: 'Scratch & Win', reskinable: true },
+      { slug: 'lucky-spin-wheel', name: 'Lucky Spin Wheel', reskinable: true },
+      { slug: 'trivia-quiz-night', name: 'Trivia Quiz Night', reskinable: true },
+      { slug: 'memory-match-3', name: 'Memory Match' },
+      { slug: 'arcade-runner' }
+    ]
+  },
   // 14-day cohort — bare CohortRow[] (newest last).
   '/api/v1/portal-admin/reports/cohort': [
     { cohort_day: '2026-05-30', new_customers: 7 },
