@@ -82,3 +82,31 @@ export function maxBucket(dist: LoyaltyTierDistribution[]): number {
 export function barPct(members: number, dist: LoyaltyTierDistribution[]): number {
   return Math.round((100 * members) / maxBucket(dist))
 }
+
+/** A tier row in the editor (mirrors the PUT body shape). */
+export interface EditableTier {
+  name: string
+  min_xp: number
+  perk: string
+}
+
+/** Validate the ladder before PUT — mirrors the backend guard
+ *  (portal_admin.py ~3584): 1–8 tiers, the lowest min_xp must be 0,
+ *  names unique (case-insensitive), ascending min_xp. */
+export function validateTiers(tiers: EditableTier[]): string[] {
+  const errs: string[] = []
+  if (tiers.length === 0) errs.push('Add at least one tier')
+  if (tiers.length > 8) errs.push('At most 8 tiers')
+  if (tiers.some((t) => !t.name.trim())) errs.push('Every tier needs a name')
+  const names = tiers.map((t) => t.name.trim().toLowerCase())
+  if (new Set(names).size !== names.length) errs.push('Tier names must be unique')
+  if (tiers.length > 0 && Number(tiers[0].min_xp) !== 0)
+    errs.push('The first tier must start at 0 XP')
+  for (let i = 1; i < tiers.length; i++) {
+    if (Number(tiers[i].min_xp) <= Number(tiers[i - 1].min_xp)) {
+      errs.push('Each tier must require more XP than the one above it')
+      break
+    }
+  }
+  return errs
+}

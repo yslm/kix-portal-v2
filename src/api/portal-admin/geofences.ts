@@ -52,3 +52,18 @@ import type { GeofencesListResponse } from './types'
  * @see src/views/kix/Geofences.vue
  */
 export const listGeofences = () => http.get<GeofencesListResponse>('/api/v1/portal-admin/locations')
+
+/**
+ * POST /geofence/stores/register — add a store/geofence (deferred editor,
+ * now shipped). Prefers place_id + geocoded_address; raw lat/lng are
+ * back-compat only (geofence.py ~642). radius_meters 10–20000.
+ */
+export const registerStore = (body: {
+  brand_id?: number | string
+  name: string
+  place_id?: string | null
+  geocoded_address?: string | null
+  radius_meters?: number
+  lat?: number
+  lng?: number
+}) => http.post('/api/v1/geofence/stores/register', body)

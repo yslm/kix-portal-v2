@@ -42,3 +42,11 @@ export const listLoyaltyTiers = () =>
 
 export const listLoyaltyTierDistribution = () =>
   http.get<LoyaltyTierDistributionResponse>('/api/v1/portal-admin/loyalty-tiers/distribution')
+
+/**
+ * PUT /loyalty-tiers — save the full ladder (deferred editor, now shipped).
+ * Server-validated: lowest min_xp must be 0, names unique (case-insensitive),
+ * 1–8 tiers (portal_admin.py ~3584). 422 body surfaces the reason.
+ */
+export const saveLoyaltyTiers = (tiers: { name: string; min_xp: number; perk: string }[]) =>
+  http.put<LoyaltyTiersResponse>('/api/v1/portal-admin/loyalty-tiers', { tiers })

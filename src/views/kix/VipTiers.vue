@@ -27,11 +27,14 @@
     mergeMembers,
     tierKpis,
     barPct,
-    type LadderRow
+    type LadderRow,
+    type EditableTier
   } from './vip-tiers/vipTiersModel'
+  import TierEditorDialog from './vip-tiers/TierEditorDialog.vue'
 
   const { t } = useI18n()
 
+  const editorOpen = ref(false)
   const loading = ref(true)
   const error = ref<string | null>(null)
   const tiers = ref<LoyaltyTier[]>([])
@@ -40,6 +43,13 @@
   const distError = ref<string | null>(null)
 
   const ladder = computed<LadderRow[]>(() => mergeMembers(tiers.value, distribution.value))
+  const editableTiers = computed<EditableTier[]>(() =>
+    tiers.value.map((tier) => ({
+      name: tier.name ?? '',
+      min_xp: Number(tier.min_xp) || 0,
+      perk: tier.perk ?? ''
+    }))
+  )
   const kpis = computed(() => tierKpis(tiers.value, sampledMembers.value))
   const kpiCards = computed(() => [
     { icon: 'ri:vip-crown-2-line', label: 'Total tiers', value: String(kpis.value.total) },
@@ -126,9 +136,14 @@
 
 <template>
   <div class="kix-vip-tiers p-5 space-y-5">
-    <header>
-      <h1 class="text-2xl font-bold">{{ t('portal.vip.title') }}</h1>
-      <p class="text-sm text-gray-500 mt-1">{{ t('portal.vip.subtitle') }}</p>
+    <header class="flex items-end justify-between gap-4 flex-wrap">
+      <div>
+        <h1 class="text-2xl font-bold">{{ t('portal.vip.title') }}</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ t('portal.vip.subtitle') }}</p>
+      </div>
+      <ElButton type="primary" data-testid="vip-edit-tiers" @click="editorOpen = true">
+        Edit tiers
+      </ElButton>
     </header>
 
     <div data-testid="vip-kpis" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -213,5 +228,7 @@
         </div>
       </ElCard>
     </div>
+
+    <TierEditorDialog v-model="editorOpen" :tiers="editableTiers" @saved="load" />
   </div>
 </template>

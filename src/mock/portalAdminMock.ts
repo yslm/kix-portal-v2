@@ -632,6 +632,14 @@ const MOCKS: Record<string, unknown> = {
       { name: 'Platinum', min_xp: 5000, perk: 'Concierge + early drops' }
     ]
   },
+  // VIP tiers · editor save (PUT /loyalty-tiers; matcher ignores method/body).
+  // Shares the GET key below — GET returns { tiers }, PUT echoes the same.
+  '/api/v1/geofence/stores/register': { ok: true, store_id: 'loc_demo_new' },
+  '/api/v1/portal-admin/case-studio/prospects/nana/render-deck': {
+    prospect_id: 'nana',
+    html: '<html><body style="font-family:sans-serif;padding:3rem"><h1>Nana · Pitch deck</h1><p>12-slide deck rendered from 3 verified sources (demo).</p></body></html>',
+    rendered_at: 1781000000
+  },
   '/api/v1/portal-admin/loyalty-tiers/distribution': {
     brand_id: 'demo',
     sampled_members: 412,

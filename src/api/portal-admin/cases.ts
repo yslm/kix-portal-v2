@@ -44,3 +44,24 @@ import type { CasesListResponse } from './types'
  */
 export const listCases = () =>
   http.get<CasesListResponse>('/api/v1/portal-admin/case-studio/prospects')
+
+/**
+ * POST /case-studio/prospects — create a prospect (deferred editor, now
+ * shipped; CreateProspectRequest, case_studio.py ~55).
+ */
+export const createProspect = (body: {
+  company_name: string
+  primary_url: string
+  vertical?: string
+  tagline?: string
+}) => http.post('/api/v1/portal-admin/case-studio/prospects', body)
+
+/**
+ * POST /case-studio/prospects/{id}/render-deck — (re)render the 12-slide
+ * deck (case_studio.py). Returns { html, rendered_at }.
+ */
+export const renderDeck = (prospectId: string) =>
+  http.post<{ prospect_id?: string; html?: string; rendered_at?: number }>(
+    `/api/v1/portal-admin/case-studio/prospects/${encodeURIComponent(prospectId)}/render-deck`,
+    {}
+  )

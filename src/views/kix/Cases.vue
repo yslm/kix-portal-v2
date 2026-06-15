@@ -19,7 +19,7 @@
    */
   import { computed, onMounted, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { listCases } from '@/api/portal-admin/cases'
+  import { listCases, renderDeck } from '@/api/portal-admin/cases'
   import type { CaseStudy } from '@/api/portal-admin/types'
   import StatusBadge from '@/components/StatusBadge.vue'
   import {
@@ -31,8 +31,13 @@
     CASE_FILTERS,
     type CaseFilterKey
   } from './cases/casesModel'
+  import NewCaseDialog from './cases/NewCaseDialog.vue'
 
   const { t } = useI18n()
+
+  const newOpen = ref(false)
+  const deckHtml = ref<string | null>(null)
+  const deckLoadingId = ref<string | null>(null)
 
   const loading = ref(true)
   const error = ref<string | null>(null)
@@ -69,14 +74,32 @@
     return c.prospect_id ?? `idx-${idx}`
   }
 
+  async function openDeck(c: CaseStudy) {
+    if (!c.prospect_id) return
+    deckLoadingId.value = c.prospect_id
+    try {
+      const res = await renderDeck(c.prospect_id)
+      deckHtml.value = res.data?.html ?? '<p style="padding:2rem">Deck not available.</p>'
+    } catch (e: unknown) {
+      deckHtml.value = `<p style="padding:2rem;color:#b91c1c">Failed to render deck: ${
+        e instanceof Error ? e.message : String(e)
+      }</p>`
+    } finally {
+      deckLoadingId.value = null
+    }
+  }
+
   onMounted(load)
 </script>
 
 <template>
   <div class="kix-cases p-5 space-y-5">
-    <header>
-      <h1 class="text-2xl font-bold">{{ t('portal.cases.title') }}</h1>
-      <p class="text-sm text-gray-500 mt-1">{{ t('portal.cases.subtitle') }}</p>
+    <header class="flex items-end justify-between gap-4 flex-wrap">
+      <div>
+        <h1 class="text-2xl font-bold">{{ t('portal.cases.title') }}</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ t('portal.cases.subtitle') }}</p>
+      </div>
+      <ElButton type="primary" data-testid="cases-new" @click="newOpen = true">+ New case</ElButton>
     </header>
 
     <!-- KPI strip — canonical art-design-pro card-list anatomy -->
@@ -166,7 +189,51 @@
           {{ c.primary_url }}
         </p>
         <p v-if="c.tagline" class="text-sm text-gray-600 leading-relaxed">{{ c.tagline }}</p>
+        <div class="mt-auto pt-2">
+          <ElButton
+            size="small"
+            :loading="deckLoadingId === c.prospect_id"
+            :data-testid="`case-deck-${rowKey(c, idx)}`"
+            @click="openDeck(c)"
+          >
+            📊 Open deck
+          </ElButton>
+        </div>
       </article>
     </div>
+
+    <NewCaseDialog v-model="newOpen" @created="load" />
+
+    <!-- Rendered deck overlay -->
+    <Teleport to="body">
+      <div
+        v-if="deckHtml !== null"
+        data-testid="deck-modal"
+        class="fixed inset-0 z-[3000] flex-cc bg-black/70 p-4"
+        @click.self="deckHtml = null"
+      >
+        <div
+          class="bg-white rounded-xl overflow-hidden flex flex-col"
+          style="width: 92vw; height: 92vh"
+        >
+          <header class="flex items-center justify-between px-4 h-12 border-b shrink-0">
+            <span class="font-semibold text-sm">Pitch deck</span>
+            <button
+              class="text-gray-400 hover:text-gray-700 text-xl"
+              data-testid="deck-close"
+              @click="deckHtml = null"
+            >
+              ×
+            </button>
+          </header>
+          <iframe
+            :srcdoc="deckHtml"
+            class="flex-1 w-full border-0"
+            title="Pitch deck"
+            data-testid="deck-frame"
+          />
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>

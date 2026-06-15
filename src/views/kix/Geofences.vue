@@ -30,8 +30,11 @@
     GEOFENCE_FILTERS,
     type GeofenceFilterKey
   } from './geofences/geofencesModel'
+  import AddStoreDialog from './geofences/AddStoreDialog.vue'
 
   const { t } = useI18n()
+
+  const addOpen = ref(false)
 
   const loading = ref(true)
   const error = ref<string | null>(null)
@@ -125,9 +128,14 @@
 
 <template>
   <div class="kix-geofences p-5 space-y-5">
-    <header>
-      <h1 class="text-2xl font-bold">{{ t('portal.geofences.title') }}</h1>
-      <p class="text-sm text-gray-500 mt-1">{{ t('portal.geofences.subtitle') }}</p>
+    <header class="flex items-end justify-between gap-4 flex-wrap">
+      <div>
+        <h1 class="text-2xl font-bold">{{ t('portal.geofences.title') }}</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ t('portal.geofences.subtitle') }}</p>
+      </div>
+      <ElButton type="primary" data-testid="geofence-add" @click="addOpen = true"
+        >+ Add store</ElButton
+      >
     </header>
 
     <div data-testid="geofence-kpis" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -201,5 +209,7 @@
         @pagination:size-change="handleSizeChange"
       />
     </ElCard>
+
+    <AddStoreDialog v-model="addOpen" @saved="load" />
   </div>
 </template>
