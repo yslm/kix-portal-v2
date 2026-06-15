@@ -448,6 +448,40 @@ const MOCKS: Record<string, unknown> = {
       }
     ]
   },
+  // Geofences (stores) — canonical { locations } wrapper. Mixed geocoded
+  // state + radii so the filter + KPIs have signal.
+  '/api/v1/portal-admin/locations': {
+    locations: [
+      {
+        id: 'loc_orchard',
+        name: 'Orchard Flagship',
+        address: '391 Orchard Rd, Singapore 238872',
+        radius_m: 150,
+        place_id: 'ChIJOrchard',
+        lat: 1.3048,
+        lng: 103.8318
+      },
+      {
+        id: 'loc_bugis',
+        name: 'Bugis Junction',
+        address: '200 Victoria St, Singapore 188021',
+        radius_m: 100,
+        lat: 1.2996,
+        lng: 103.8556
+      },
+      {
+        id: 'loc_tampines',
+        name: 'Tampines Mall',
+        address: '4 Tampines Central 5, Singapore 529510',
+        radius_m: 200
+      },
+      {
+        id: 'loc_jurong',
+        name: 'Jurong Point (pending geocode)',
+        address: '1 Jurong West Central 2'
+      }
+    ]
+  },
   // 14-day cohort — bare CohortRow[] (newest last).
   '/api/v1/portal-admin/reports/cohort': [
     { cohort_day: '2026-05-30', new_customers: 7 },
