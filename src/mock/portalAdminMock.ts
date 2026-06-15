@@ -772,6 +772,16 @@ const MOCKS: Record<string, unknown> = {
     total: 6,
     complete: false,
     source: 'mock'
+  },
+  // Builder · opportunity score (POST; matcher ignores method + body).
+  // Mid-band score with improvement hints so the hero card + bar show signal.
+  '/api/v1/portal/builder/opportunity-score': {
+    score: 62,
+    hints: [
+      { points: 15, label: 'Add a voucher reward so winners have something to redeem' },
+      { points: 12, label: 'Set a schedule — limited-time runs lift urgency' },
+      { points: 8, label: 'Attach a store geofence to drive footfall' }
+    ]
   }
 }
 
