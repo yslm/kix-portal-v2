@@ -773,6 +773,60 @@ const MOCKS: Record<string, unknown> = {
     complete: false,
     source: 'mock'
   },
+  // Overview · live-cards grid (settings/builder path). { cards } wrapper.
+  '/api/v1/portal/builder/live-cards': {
+    cards: [
+      {
+        cid: 'cmp_lunch_spin',
+        name: 'Lunch spin · 200m geofence',
+        players: 312,
+        vouchers: 148,
+        redeems: 92,
+        spend_sgd: 378,
+        budget_sgd: 600,
+        spend_pct: 63,
+        stale_seconds: 42
+      },
+      {
+        cid: 'cmp_scratch_breakfast',
+        name: 'Scratch & win · breakfast',
+        players: 174,
+        vouchers: 71,
+        redeems: 38,
+        spend_sgd: 214,
+        budget_sgd: 400,
+        spend_pct: 53,
+        stale_seconds: 88
+      },
+      {
+        cid: 'cmp_mystery_evening',
+        name: 'Mystery box · evening',
+        players: 96,
+        vouchers: 33,
+        redeems: 12,
+        spend_sgd: 128,
+        budget_sgd: 300,
+        spend_pct: 43,
+        stale_seconds: 15
+      }
+    ]
+  },
+  // Settings · brand profile (settings-router path, brand in URL → demo_brand
+  // when resolveBrandId() is unset; demo mode resolves to 'demo'). Canonical
+  // { profile } wrapper.
+  '/api/v1/portal/settings/profile/demo': {
+    profile: {
+      brand_name: 'Toast Box',
+      business_type: 'fnb',
+      contact_email: 'owner@toastbox.demo',
+      contact_phone: '+65 6123 4567',
+      tax_id: 'SG-202612345A',
+      country: 'SG',
+      city: 'Singapore',
+      website_url: 'https://toastbox.demo',
+      logo_url: ''
+    }
+  },
   // Builder · opportunity score (POST; matcher ignores method + body).
   // Mid-band score with improvement hints so the hero card + bar show signal.
   '/api/v1/portal/builder/opportunity-score': {
