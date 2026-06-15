@@ -469,6 +469,38 @@ The reusable restyle recipe is in §Week 8b. Verify: `pnpm vitest run` (expect 2
 
 ---
 
+## Week 8f: Flows rebuilt onto ArtTable (2026-06-15)
+
+**Status: DONE — committed, headless-reviewed.** Seventh view through the restyle template (Campaigns · Games · Customers · Audiences · AbTests · Rules · Flows). Replaces the last hand-rolled `<table>` among the P1 list views.
+
+### Commit
+
+- e43c99c feat(flows): rebuild Flows onto ArtTable + KPI strip + status filter
+
+### What shipped
+
+- KPI strip (card-list anatomy): Total flows / Active / Paused / Total steps — honest aggregates of real fields.
+- Status segmented filter (All/Active/Paused/Draft/Ended, case-insensitive vs the free-form legacy status-pill values) + name search, client-side.
+- ArtTable cols: Status badge · Flow (name + `template_id`, "custom" fallback per legacy portal.html:8779) · Steps · Window (`start → end`, em-dash when absent per portal.html:8777).
+- "+ Create flow" → `/builder`. The 4-step wizard (pick template → customize → simulate funnel → publish) + templates grid + simulator panel stay **DEFERRED** (large stateful feature, not a restyle) — same call as the Games Smart-Recommend wizard.
+- Real fields verified vs `AutomationFlow` (types.ts:278): flow_id/name/status/start_date/end_date/steps_count/template_id — no type change needed.
+- Flows i18n keys (`portal.flows.title` = "Campaign Flows" / `portal.flows.subtitle`) resolve fine — NO raw-key nit like abtests/rules.
+
+### Result
+
+- `flows/flowsModel.ts` (11 unit cases) + `Flows.spec` rewritten (6). Tests **263/263** (+13). tsc zero new production errors.
+- Headless (`?brand=demo#/flows`): KPIs 4/2/1/14; 4 rows; Paused filter → 1 row; em-dash window on the no-date rows. Native art-design-pro.
+
+### ▶ RESUME HERE NEXT (breadth track)
+
+ArtTable/card restyle now done for ALL 7 P1 list views: **Campaigns · Games · Customers · Audiences · AbTests · Rules · Flows**. Remaining single-thin views are the **P2 set**: Templates · Cases · VipTiers · Storefront · Billing (+invoices) · Geofences · Creatives · Rewards. Apply the §Week 8b recipe to each (most are simple lists/cards). Also still in scope: **Builder** entry view (currently thin).
+
+Deferred features still logged: Games Smart-Recommend wizard; **Flows 4-step wizard**; reconcile Overview `CampaignTable.vue` / Reports `TopCampaignsTable.vue` to real-field-first; abtests/rules i18n keys (`portal.abtests.title` / `portal.rules.title` render raw — add keys + `pnpm sync:locales`).
+
+Verify: `pnpm vitest run` (expect 263+), `pnpm tsc --noEmit 2>&1 | grep -E "error TS" | grep -v "\.vue'"` (expect none), `pnpm dev:mock` + `?brand=demo#/<route>` (note non-obvious paths: customer-list, abtests).
+
+---
+
 ## Future: Production cutover (HELD — deferred until view deepening complete)
 
 Originally Plan 7. Now deferred to after all view-deepening passes finish (Week 7 Overview + Plan 8+ for the remaining 17 views) AND user signs off on visual parity per view.
