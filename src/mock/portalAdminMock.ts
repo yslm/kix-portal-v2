@@ -567,6 +567,48 @@ const MOCKS: Record<string, unknown> = {
       { number: 'INV-2026-0264', date: '2026-04-01', total_sgd: 320, status: 'pending' }
     ]
   },
+  // Rewards templates — /api/v1/prizes (query stripped by the matcher).
+  // Canonical { prizes } wrapper; mixed type/status/inventory for filters.
+  '/api/v1/prizes': {
+    prizes: [
+      {
+        prize_id: 'rw_10off',
+        name: '10% off any play',
+        type: 'voucher',
+        offer_type: 'percent_off',
+        original_price_cents: 0,
+        inventory_count: null,
+        status: 'active'
+      },
+      {
+        prize_id: 'rw_tote',
+        name: 'Limited tote bag',
+        type: 'prize',
+        offer_type: 'free',
+        original_price_cents: 1500,
+        inventory_count: 200,
+        status: 'active'
+      },
+      {
+        prize_id: 'rw_cashback',
+        name: 'S$5 cashback',
+        type: 'cashback',
+        offer_type: 'fixed_price',
+        original_price_cents: 500,
+        inventory_count: 500,
+        status: 'active'
+      },
+      {
+        prize_id: 'rw_drink',
+        name: 'Free drink voucher',
+        type: 'voucher',
+        offer_type: 'free',
+        original_price_cents: 450,
+        inventory_count: null,
+        status: 'inactive'
+      }
+    ]
+  },
   // 14-day cohort — bare CohortRow[] (newest last).
   '/api/v1/portal-admin/reports/cohort': [
     { cohort_day: '2026-05-30', new_customers: 7 },

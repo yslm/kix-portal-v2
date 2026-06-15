@@ -1,202 +1,115 @@
 /**
- * Rewards.vue render test — exercises the four state branches of the
- * Templates tab (data | empty | error | loading) plus the tab-switch
- * UX into each of the three stub tabs (Game links / Issuance /
- * Redemption).
- *
- * Same fixture / stubbing shape as Creatives.spec.ts — `t(key) => key`
- * stub. No explicit brand-id stub needed: `listRewardTemplates()`
- * falls back to `resolveBrandId()` which falls back to `'demo_brand'`
- * when called without an arg (matches the legacy `_t44Bid()` default
- * when `kix_brand_id` is unset in localStorage), and the test mocks
- * the module-level fetcher anyway. The actual translation pipeline
- * is covered by `src/locales/__tests__/i18n-smoke.spec.ts`.
+ * Rewards.vue render test — rebuilt view (art-design-pro, Week 8m).
+ * KPI strip + ElTabs + Templates card gallery + type filter. Heavy logic
+ * unit-tested in rewards/__tests__/rewardsModel.spec.ts.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+import { defineComponent } from 'vue'
 
-vi.mock('@/api/portal-admin/rewards', () => ({
-  listRewardTemplates: vi.fn()
-}))
-
-vi.mock('vue-i18n', () => ({
-  useI18n: () => ({ t: (key: string) => key })
-}))
+vi.mock('@/api/portal-admin/rewards', () => ({ listRewardTemplates: vi.fn() }))
+vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k: string) => k }) }))
 
 import Rewards from '../Rewards.vue'
 import { listRewardTemplates } from '@/api/portal-admin/rewards'
 
-// Schema mirrors the per-row fields the legacy renderer reads at
-// portal.html line 5733-5746 (name · offer_type · image_url ·
-// inventory_count · original_price_cents · prize_id). The third row
-// deliberately omits `original_price_cents` AND uses `inventory_count: null`
-// so the defensive fallbacks are exercised:
-//   - original_price_cents missing → no value paragraph rendered
-//   - inventory_count null → 'unlimited' (legacy `== null` ternary)
-const sampleTemplates = [
+const SlotStub = (name: string) =>
+  defineComponent({
+    name,
+    setup:
+      (_, { slots }) =>
+      () =>
+        slots.default?.()
+  })
+const stubs = {
+  ElCard: SlotStub('ElCard'),
+  ElTabs: SlotStub('ElTabs'),
+  ElTabPane: SlotStub('ElTabPane'),
+  ArtSvgIcon: { template: '<i />', props: ['icon'] },
+  StatusBadge: { template: '<span />', props: ['status'] },
+  ElInput: {
+    template:
+      '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+    props: ['modelValue']
+  }
+}
+
+const sample = [
   {
-    prize_id: 'prz_kopi_free',
-    name: 'Free Americano',
+    prize_id: 'p1',
+    name: '10% off',
     type: 'voucher',
-    original_price_cents: 580,
-    inventory_count: 100,
+    original_price_cents: 0,
+    status: 'active',
+    inventory_count: 100
+  },
+  {
+    prize_id: 'p2',
+    name: 'Free tote',
+    type: 'prize',
+    original_price_cents: 1500,
     status: 'active'
   },
   {
-    prize_id: 'prz_50_off',
-    name: '50% off lunch combo',
-    offer_type: 'percent_off',
-    original_price_cents: 1290,
-    inventory_count: 50,
-    status: 'paused'
-  },
-  {
-    // Bare-bones row — value absent → no price line; inventory_count
-    // null → 'unlimited'; no status → StatusBadge falls back to gray.
-    prize_id: 'prz_legacy',
-    name: 'Legacy unlimited prize',
-    inventory_count: null
+    prize_id: 'p3',
+    name: 'S$5 cashback',
+    type: 'cashback',
+    original_price_cents: 500,
+    status: 'inactive'
   }
 ]
+const mockList = listRewardTemplates as unknown as ReturnType<typeof vi.fn>
+const mountView = () => mount(Rewards, { global: { stubs } })
 
-const mockFetch = listRewardTemplates as unknown as ReturnType<typeof vi.fn>
+describe('Rewards.vue · rebuilt view', () => {
+  beforeEach(() => vi.clearAllMocks())
 
-describe('Rewards.vue · consolidated 4-tab view', () => {
-  beforeEach(() => {
-    mockFetch.mockReset()
+  it('renders KPI strip + a card per template ({ prizes } shape)', async () => {
+    mockList.mockResolvedValueOnce({ data: { prizes: sample } })
+    const w = mountView()
+    await flushPromises()
+    expect(w.text()).toContain('portal.rewards.title')
+    const k = w.find('[data-testid="rewards-kpis"]')
+    expect(k.text()).toContain('3') // total
+    expect(k.text()).toContain('S$20') // catalog value (0+1500+500)/100
+    expect(w.findAll('[data-testid="rewards-template-card"]')).toHaveLength(3)
   })
 
-  it('renders all 4 tabs and the Templates tab is active by default', async () => {
-    mockFetch.mockResolvedValueOnce({ data: { prizes: sampleTemplates } })
-
-    const wrapper = mount(Rewards)
+  it('type filter narrows the grid', async () => {
+    mockList.mockResolvedValueOnce({ data: { prizes: sample } })
+    const w = mountView()
     await flushPromises()
-
-    // Page header (i18n stub returns key)
-    expect(wrapper.text()).toContain('portal.rewards.title')
-    expect(wrapper.text()).toContain('portal.rewards.subtitle')
-
-    // All 4 tab buttons present
-    expect(wrapper.find('[data-testid="rewards-tab-templates"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="rewards-tab-game-links"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="rewards-tab-issuance"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="rewards-tab-redemption"]').exists()).toBe(true)
-
-    // Templates panel visible by default
-    expect(wrapper.find('[data-testid="rewards-panel-templates"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="rewards-panel-game-links"]').exists()).toBe(false)
+    await w.find('[data-testid="reward-voucher"]').trigger('click')
+    await flushPromises()
+    expect(w.findAll('[data-testid="rewards-template-card"]')).toHaveLength(1)
   })
 
-  it('renders the templates grid after a successful fetch (canonical `{ prizes }` wrapper)', async () => {
-    mockFetch.mockResolvedValueOnce({ data: { prizes: sampleTemplates } })
-
-    const wrapper = mount(Rewards)
+  it('search narrows the grid by name', async () => {
+    mockList.mockResolvedValueOnce({ data: { prizes: sample } })
+    const w = mountView()
     await flushPromises()
-
-    // Data branch visible; loading / error / empty hidden.
-    expect(wrapper.find('[data-testid="rewards-templates-grid"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="rewards-templates-loading"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="rewards-templates-error"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="rewards-templates-empty"]').exists()).toBe(false)
-
-    const cards = wrapper.findAll('[data-testid="rewards-template-card"]')
-    expect(cards).toHaveLength(3)
-
-    // Card 1 · explicit `type` + price (580 cents → S$5.8; fmtSgd
-    // trims trailing zeros per src/utils/format/currency.ts) +
-    // inventory.
-    expect(cards[0].text()).toContain('Free Americano')
-    expect(cards[0].text()).toContain('voucher')
-    expect(cards[0].text()).toContain('S$5.8')
-    expect(cards[0].text()).toContain('Inventory: 100')
-
-    // Card 2 · falls through to `offer_type` when `type` absent.
-    expect(cards[1].text()).toContain('50% off lunch combo')
-    expect(cards[1].text()).toContain('percent_off')
-    expect(cards[1].text()).toContain('S$12.9')
-
-    // Card 3 · null inventory → 'unlimited'; no price line.
-    expect(cards[2].text()).toContain('Legacy unlimited prize')
-    expect(cards[2].text()).toContain('Inventory: unlimited')
-    expect(cards[2].text()).not.toContain('S$')
+    await w.find('[data-testid="rewards-search"]').setValue('tote')
+    await flushPromises()
+    expect(w.findAll('[data-testid="rewards-template-card"]')).toHaveLength(1)
   })
 
-  it('normalises a bare-array response (defensive fallback)', async () => {
-    mockFetch.mockResolvedValueOnce({ data: sampleTemplates })
-
-    const wrapper = mount(Rewards)
+  it('renders the deferred stub tabs', async () => {
+    mockList.mockResolvedValueOnce({ data: { prizes: sample } })
+    const w = mountView()
     await flushPromises()
-
-    expect(wrapper.findAll('[data-testid="rewards-template-card"]')).toHaveLength(3)
-    expect(wrapper.text()).toContain('Free Americano')
+    expect(w.find('[data-testid="rewards-panel-game-links"]').exists()).toBe(true)
+    expect(w.find('[data-testid="rewards-panel-redemption"]').exists()).toBe(true)
   })
 
-  it('normalises a `{ templates }` response shape (defensive fallback)', async () => {
-    mockFetch.mockResolvedValueOnce({ data: { templates: sampleTemplates } })
-
-    const wrapper = mount(Rewards)
+  it('shows empty + error states', async () => {
+    mockList.mockResolvedValueOnce({ data: { prizes: [] } })
+    const w1 = mountView()
     await flushPromises()
+    expect(w1.find('[data-testid="rewards-templates-empty"]').exists()).toBe(true)
 
-    expect(wrapper.findAll('[data-testid="rewards-template-card"]')).toHaveLength(3)
-  })
-
-  it('shows the empty-state placeholder when the merchant has no templates', async () => {
-    mockFetch.mockResolvedValueOnce({ data: { prizes: [] } })
-
-    const wrapper = mount(Rewards)
+    mockList.mockRejectedValueOnce(new Error('boom'))
+    const w2 = mountView()
     await flushPromises()
-
-    expect(wrapper.find('[data-testid="rewards-templates-empty"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('No reward templates yet')
-    expect(wrapper.find('[data-testid="rewards-templates-grid"]').exists()).toBe(false)
-  })
-
-  it('shows the error branch when fetch rejects', async () => {
-    mockFetch.mockRejectedValueOnce(new Error('network down'))
-
-    const wrapper = mount(Rewards)
-    await flushPromises()
-
-    expect(wrapper.find('[data-testid="rewards-templates-error"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Failed to load')
-    expect(wrapper.text()).toContain('network down')
-    expect(wrapper.find('[data-testid="rewards-templates-grid"]').exists()).toBe(false)
-  })
-
-  it('switches to the Game links stub on tab click', async () => {
-    mockFetch.mockResolvedValueOnce({ data: { prizes: sampleTemplates } })
-
-    const wrapper = mount(Rewards)
-    await flushPromises()
-
-    await wrapper.find('[data-testid="rewards-tab-game-links"]').trigger('click')
-
-    expect(wrapper.find('[data-testid="rewards-panel-game-links"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="rewards-panel-templates"]').exists()).toBe(false)
-    expect(wrapper.text()).toContain('Game-link bindings coming soon')
-  })
-
-  it('switches to the Issuance stub on tab click', async () => {
-    mockFetch.mockResolvedValueOnce({ data: { prizes: sampleTemplates } })
-
-    const wrapper = mount(Rewards)
-    await flushPromises()
-
-    await wrapper.find('[data-testid="rewards-tab-issuance"]').trigger('click')
-
-    expect(wrapper.find('[data-testid="rewards-panel-issuance"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Issuance history coming soon')
-  })
-
-  it('switches to the Redemption stub on tab click', async () => {
-    mockFetch.mockResolvedValueOnce({ data: { prizes: sampleTemplates } })
-
-    const wrapper = mount(Rewards)
-    await flushPromises()
-
-    await wrapper.find('[data-testid="rewards-tab-redemption"]').trigger('click')
-
-    expect(wrapper.find('[data-testid="rewards-panel-redemption"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Redemption tracking coming soon')
+    expect(w2.find('[data-testid="rewards-templates-error"]').exists()).toBe(true)
   })
 })
