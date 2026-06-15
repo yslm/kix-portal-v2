@@ -593,6 +593,43 @@ Verify: `pnpm vitest run` (expect 330+), `pnpm tsc --noEmit 2>&1 | grep -E "erro
 
 ---
 
+## Week 8o: Builder rebuilt + abtests/rules i18n nit cleared — BREADTH TRACK COMPLETE (2026-06-15)
+
+**Status: DONE.** The last non-rebuilt main view (Builder) is on art-design-pro, and the long-standing abtests/rules raw-key nit is fixed. **Every merchant-facing view in the portal is now rebuilt onto the art-design-pro language.**
+
+### Commits
+
+- 4bdd308 fix(i18n): add missing abtests / rules / builder portal keys
+- 0f1fde4 feat(builder): rebuild entry view onto opportunity-score hero + block grid
+
+### Builder
+
+- `builder/builderModel.ts`: pure logic (BUILD_MODULES+icons / scoreTone / potentialGain / scorePct), unit-tested (4 cases).
+- Opportunity score → hero `.art-card`: tone-coloured score /100 (low→danger / mid→theme / high→success) + progress bar + "+N potential" + hints with +points badges. 6 build blocks → `.art-card` buttons with `bg-theme/10` icon squares.
+- DEFERRED (large stateful feature): the 6 module sub-forms + save-draft/publish + live build overlay (each block keeps its "coming soon" click).
+- POST `/portal/builder/opportunity-score` demo mock added (the mock matcher ignores method/body).
+
+### i18n nit cleared
+
+`portal.abtests.title/subtitle` + `portal.rules.title/subtitle` (+ `portal.builder.opp.good`) were MISSING from the SSOT in both wired locales → added as portal-layer overrides. Verified on-screen: abtests H1 = A/B 测试, rules H1 = 规则. The override block in `locales/portal/{en,zh}.json` now covers every view whose SSOT keys were absent.
+
+### Result
+
+- Tests **334/334**. tsc zero new production errors.
+- Headless `?brand=demo#/builder`: score 62/100 + 3 hints + 6 blocks; native.
+
+### ▶ STATE OF THE PORTAL (all views rebuilt)
+
+Overview (deepened, Week 7) · Reports (deepened) · **all 5 P0** · **all 7 P1 list views** · **all 8 P2 views** · **Builder** — every route is real and on the art-design-pro language. Only **deferred FEATURES** remain (each a mini-project, confirm priority before building):
+
+- Creation/editor flows: Games Smart-Recommend wizard · Flows 4-step wizard · Builder 6 module sub-forms + publish · VipTiers tier editor · Storefront customization editor · Templates new-template + sort/rank/detail/Try-demo · Geofences add-store + map · Creatives upload · Cases new-case + deck render · Rewards 3 stub tabs (Game links / Issuance / Redemption) + Templates editor · Billing recharge / payment-methods.
+- Polish: reconcile Overview `CampaignTable.vue` / Reports `TopCampaignsTable.vue` to real-field-first.
+- **Production cutover** (below) — all merchant-facing views are visually done; this is the natural next milestone once the user signs off on parity.
+
+Verify: `pnpm vitest run` (expect 334+), `pnpm tsc --noEmit 2>&1 | grep -E "error TS" | grep -v "\.vue'"` (none), `pnpm dev:mock` + `?brand=demo#/builder`.
+
+---
+
 ## Future: Production cutover (HELD — deferred until view deepening complete)
 
 Originally Plan 7. Now deferred to after all view-deepening passes finish (Week 7 Overview + Plan 8+ for the remaining 17 views) AND user signs off on visual parity per view.
