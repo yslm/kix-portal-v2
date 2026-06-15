@@ -13,15 +13,21 @@
    * Real fields: prize_id / name / type / offer_type / inventory_count /
    * original_price_cents / status.
    *
-   * DEFERRED (not a restyle): the Templates new-template form + delete +
-   * expiry flag; the Game links / Issuance / Redemption tabs (kept as
-   * restyled "coming soon" panels naming the legacy fetcher each needs).
+   * All four tabs are now live: Templates (card gallery + create/delete) ·
+   * Game links (per-game coupon binding) · Issuance (issued/claimed/redeemed
+   * summary) · Redemption (voucher lookup + counter redeem). Each tab's
+   * fetch/mutation is a real endpoint (see rewards/*Tab.vue + rewards.ts).
    */
   import { computed, onMounted, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { listRewardTemplates } from '@/api/portal-admin/rewards'
+  import { ElMessageBox } from 'element-plus'
+  import { listRewardTemplates, deleteRewardTemplate } from '@/api/portal-admin/rewards'
   import type { RewardTemplate, RewardsTabId } from '@/api/portal-admin/types'
   import StatusBadge from '@/components/StatusBadge.vue'
+  import GameLinksTab from './rewards/GameLinksTab.vue'
+  import IssuanceTab from './rewards/IssuanceTab.vue'
+  import RedemptionTab from './rewards/RedemptionTab.vue'
+  import NewTemplateDialog from './rewards/NewTemplateDialog.vue'
   import {
     normalizeTemplates,
     valueFor,
@@ -41,6 +47,7 @@
   const activeTab = ref<RewardsTabId>('templates')
   const filter = ref<RewardFilterKey>('all')
   const query = ref('')
+  const newOpen = ref(false)
 
   const filtered = computed(() =>
     filterTemplates(all.value, { filter: filter.value, query: query.value })
@@ -71,14 +78,44 @@
     }
   }
 
+  async function removeTemplate(tpl: RewardTemplate) {
+    const id = tpl.prize_id ?? tpl.id
+    if (!id) return
+    try {
+      await ElMessageBox.confirm(
+        'Delete this template? Any game bound to it will be unbound.',
+        'Delete template',
+        { type: 'warning', confirmButtonText: 'Delete', cancelButtonText: 'Cancel' }
+      )
+    } catch {
+      return // cancelled
+    }
+    try {
+      await deleteRewardTemplate(String(id))
+      await loadTemplates()
+    } catch (e: unknown) {
+      error.value = e instanceof Error ? e.message : String(e)
+    }
+  }
+
   onMounted(loadTemplates)
 </script>
 
 <template>
   <div class="kix-rewards p-5 space-y-5">
-    <header>
-      <h1 class="text-2xl font-bold">{{ t('portal.rewards.title') }}</h1>
-      <p class="text-sm text-gray-500 mt-1">{{ t('portal.rewards.subtitle') }}</p>
+    <header class="flex items-end justify-between gap-4 flex-wrap">
+      <div>
+        <h1 class="text-2xl font-bold">{{ t('portal.rewards.title') }}</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ t('portal.rewards.subtitle') }}</p>
+      </div>
+      <ElButton
+        v-if="activeTab === 'templates'"
+        type="primary"
+        data-testid="rewards-new-template"
+        @click="newOpen = true"
+      >
+        + New template
+      </ElButton>
     </header>
 
     <!-- KPI strip (templates aggregates) -->
@@ -168,7 +205,17 @@
                 <h3 class="font-semibold text-sm text-gray-900 break-words leading-tight">
                   {{ tpl.name }}
                 </h3>
-                <StatusBadge v-if="tpl.status" :status="tpl.status" />
+                <div class="flex items-center gap-1 shrink-0">
+                  <StatusBadge v-if="tpl.status" :status="tpl.status" />
+                  <button
+                    class="text-gray-300 hover:text-red-500 text-sm leading-none"
+                    :data-testid="`tpl-delete-${rowKey(tpl, idx)}`"
+                    title="Delete template"
+                    @click="removeTemplate(tpl)"
+                  >
+                    🗑
+                  </button>
+                </div>
               </div>
               <span
                 v-if="subtypeFor(tpl)"
@@ -185,26 +232,19 @@
         </ElTabPane>
 
         <ElTabPane label="Game links" name="game-links">
-          <div data-testid="rewards-panel-game-links" class="text-gray-400 py-12 text-center">
-            <p class="font-medium text-gray-500">Game-link bindings coming soon.</p>
-            <p class="text-xs mt-2">Defer: per-game prize + voucher tier configuration.</p>
-          </div>
+          <GameLinksTab v-if="activeTab === 'game-links'" :templates="all" />
         </ElTabPane>
 
         <ElTabPane label="Issuance" name="issuance">
-          <div data-testid="rewards-panel-issuance" class="text-gray-400 py-12 text-center">
-            <p class="font-medium text-gray-500">Issuance history coming soon.</p>
-            <p class="text-xs mt-2">Defer: per-customer voucher issuance log + filters.</p>
-          </div>
+          <IssuanceTab v-if="activeTab === 'issuance'" />
         </ElTabPane>
 
         <ElTabPane label="Redemption" name="redemption">
-          <div data-testid="rewards-panel-redemption" class="text-gray-400 py-12 text-center">
-            <p class="font-medium text-gray-500">Redemption tracking coming soon.</p>
-            <p class="text-xs mt-2">Defer: real-time redemption log + QR scan stats.</p>
-          </div>
+          <RedemptionTab v-if="activeTab === 'redemption'" />
         </ElTabPane>
       </ElTabs>
     </ElCard>
+
+    <NewTemplateDialog v-model="newOpen" @created="loadTemplates" />
   </div>
 </template>

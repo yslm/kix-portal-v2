@@ -713,6 +713,50 @@ const MOCKS: Record<string, unknown> = {
       }
     ]
   },
+  // Rewards · Issuance tab — issued/claimed/redeemed per template.
+  '/api/v1/coupons/issuance-summary': {
+    ok: true,
+    count: 3,
+    summary: [
+      {
+        coupon_template_id: 1,
+        template_name: '10% off any play',
+        issued: 420,
+        claimed: 318,
+        redeemed: 142
+      },
+      {
+        coupon_template_id: 2,
+        template_name: 'Free drink voucher',
+        issued: 260,
+        claimed: 201,
+        redeemed: 88
+      },
+      {
+        coupon_template_id: 3,
+        template_name: 'S$5 cashback',
+        issued: 120,
+        claimed: 64,
+        redeemed: 30
+      }
+    ]
+  },
+  // Rewards · Redemption tab — voucher lookup (query stripped by matcher).
+  '/api/v1/portal-admin/vouchers/lookup': {
+    voucher_id: 'vch_demo01',
+    code: 'KIX-DEMO-7788',
+    status: 'active',
+    title: 'Free bubble tea',
+    holder: 'walk-in',
+    expires_at: '2026-07-31'
+  },
+  // Rewards · Redemption tab — redeem result.
+  '/api/v1/portal-admin/vouchers/redeem': { ok: true },
+  // Rewards · template create / delete (POST /coupon-templates, DELETE/{id}).
+  '/api/v1/coupon-templates': {
+    ok: true,
+    coupon_template: { id: 99, name: 'New template', status: 'active' }
+  },
   // Storefront — public profile keyed on the resolved brand id (demo).
   // Carries the follower/rating/featured analytics the rebuilt view surfaces.
   '/api/v1/storefront/demo': {

@@ -1,5 +1,12 @@
 import { http } from './http'
-import type { RewardTemplatesResponse } from './types'
+import type {
+  RewardTemplatesResponse,
+  GameLinksResponse,
+  CouponBindingBody,
+  IssuanceSummaryResponse,
+  VoucherLookup,
+  CreateTemplateBody
+} from './types'
 import { resolveBrandId } from '@/utils/kix/resolveBrandId'
 
 /**
@@ -39,3 +46,49 @@ export const listRewardTemplates = (brandId?: string) =>
   http.get<RewardTemplatesResponse>(
     `/api/v1/prizes?brand_id=${encodeURIComponent(brandId ?? resolveBrandId())}`
   )
+
+// ---------------------------------------------------------------------------
+// Game links / Issuance / Redemption tabs + template editor (now shipped)
+// ---------------------------------------------------------------------------
+
+/** Game links tab — brand games with their coupon binding (kixCQLoadGameLinks
+ *  ~5717). Same endpoint as Games, but the rows carry binding fields. */
+export const fetchGameLinks = (brand?: string) =>
+  http.get<GameLinksResponse>('/api/v1/portal-admin/brand-games', {
+    params: { brand: brand ?? resolveBrandId() }
+  })
+
+/** Save a game's coupon binding (PUT …/coupon-binding, kixCQ ~5819). */
+export const saveGameBinding = (gameId: number | string, brand: string, body: CouponBindingBody) =>
+  http.put(
+    `/api/v1/portal-admin/brand-games/${encodeURIComponent(String(gameId))}/coupon-binding`,
+    body,
+    {
+      params: { brand }
+    }
+  )
+
+/** Issuance tab — issued / claimed / redeemed per template (kixCQLoadIssuance
+ *  ~5839). Note the top-level `/coupons/` namespace, brand_id query. */
+export const fetchIssuanceSummary = (brandId?: string) =>
+  http.get<IssuanceSummaryResponse>('/api/v1/coupons/issuance-summary', {
+    params: { brand_id: brandId ?? resolveBrandId() }
+  })
+
+/** Redemption tab — look up a voucher by code (kixCQLookup ~5853). */
+export const lookupVoucher = (code: string) =>
+  http.get<VoucherLookup>('/api/v1/portal-admin/vouchers/lookup', { params: { code } })
+
+/** Redeem a voucher at the counter (kixCQRedeem ~5866). */
+export const redeemVoucher = (body: { code?: string; voucher_id?: string }) =>
+  http.post<{ ok?: boolean; error?: string }>('/api/v1/portal-admin/vouchers/redeem', body)
+
+/** Create a reward template (kixCreatePrize ~5958 → POST /coupon-templates). */
+export const createRewardTemplate = (body: CreateTemplateBody) =>
+  http.post('/api/v1/coupon-templates', body)
+
+/** Delete a reward template (kixDeletePrize ~5916 → DELETE /coupon-templates/{id}). */
+export const deleteRewardTemplate = (prizeId: string, brandId?: string) =>
+  http.delete(`/api/v1/coupon-templates/${encodeURIComponent(prizeId)}`, {
+    params: { brand_id: brandId ?? resolveBrandId() }
+  })

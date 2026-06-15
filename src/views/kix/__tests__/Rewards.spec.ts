@@ -7,7 +7,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent } from 'vue'
 
-vi.mock('@/api/portal-admin/rewards', () => ({ listRewardTemplates: vi.fn() }))
+vi.mock('@/api/portal-admin/rewards', () => ({
+  listRewardTemplates: vi.fn(),
+  deleteRewardTemplate: vi.fn()
+}))
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k: string) => k }) }))
 
 import Rewards from '../Rewards.vue'
@@ -27,10 +30,18 @@ const stubs = {
   ElTabPane: SlotStub('ElTabPane'),
   ArtSvgIcon: { template: '<i />', props: ['icon'] },
   StatusBadge: { template: '<span />', props: ['status'] },
+  ElButton: { emits: ['click'], template: '<button @click="$emit(\'click\')"><slot /></button>' },
   ElInput: {
     template:
       '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
     props: ['modelValue']
+  },
+  GameLinksTab: { props: ['templates'], template: '<div data-testid="game-links-tab" />' },
+  IssuanceTab: { template: '<div data-testid="issuance-tab" />' },
+  RedemptionTab: { template: '<div data-testid="redemption-tab" />' },
+  NewTemplateDialog: {
+    props: ['modelValue'],
+    template: '<div data-testid="new-template-stub" :data-open="modelValue" />'
   }
 }
 
@@ -93,12 +104,20 @@ describe('Rewards.vue · rebuilt view', () => {
     expect(w.findAll('[data-testid="rewards-template-card"]')).toHaveLength(1)
   })
 
-  it('renders the deferred stub tabs', async () => {
+  it('+ New template opens the create dialog', async () => {
     mockList.mockResolvedValueOnce({ data: { prizes: sample } })
     const w = mountView()
     await flushPromises()
-    expect(w.find('[data-testid="rewards-panel-game-links"]').exists()).toBe(true)
-    expect(w.find('[data-testid="rewards-panel-redemption"]').exists()).toBe(true)
+    expect(w.find('[data-testid="new-template-stub"]').attributes('data-open')).toBe('false')
+    await w.find('[data-testid="rewards-new-template"]').trigger('click')
+    expect(w.find('[data-testid="new-template-stub"]').attributes('data-open')).toBe('true')
+  })
+
+  it('renders a delete control per template card', async () => {
+    mockList.mockResolvedValueOnce({ data: { prizes: sample } })
+    const w = mountView()
+    await flushPromises()
+    expect(w.find('[data-testid="tpl-delete-p1"]').exists()).toBe(true)
   })
 
   it('shows empty + error states', async () => {

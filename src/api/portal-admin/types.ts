@@ -1764,6 +1764,78 @@ export type RewardTemplatesResponse =
 export type RewardsTabId = 'templates' | 'game-links' | 'issuance' | 'redemption'
 
 // ---------------------------------------------------------------------------
+// Rewards · Game links / Issuance / Redemption tabs + template editor
+// (deferred feature, now shipped). Endpoints verified against portal.html
+// (kixCQLoadGameLinks ~5717 / kixCQLoadIssuance ~5839 / kixCQLookup ~5853 /
+// kixCQRedeem ~5866 / kixCreatePrize ~5958 / kixDeletePrize ~5916).
+// ---------------------------------------------------------------------------
+
+/** A brand game row with its coupon binding (GET /portal-admin/brand-games). */
+export interface GameLink {
+  game_id?: number | string
+  game_slug?: string
+  name?: string
+  coupon_template_id?: number | null
+  distribution_rule?: 'on_win' | 'none' | string
+  play_url?: string
+}
+
+export interface GameLinksResponse {
+  games?: GameLink[]
+  items?: GameLink[]
+}
+
+/** PUT /portal-admin/brand-games/{id}/coupon-binding body. */
+export interface CouponBindingBody {
+  coupon_template_id?: number | null
+  prize_id?: number | string | null
+  distribution_rule: 'on_win' | 'none'
+}
+
+/** One row of GET /coupons/issuance-summary → { summary: [...] }. */
+export interface IssuanceRow {
+  coupon_template_id?: number
+  template_name?: string
+  issued?: number
+  claimed?: number
+  redeemed?: number
+}
+
+export interface IssuanceSummaryResponse {
+  ok?: boolean
+  count?: number
+  summary?: IssuanceRow[]
+}
+
+/** GET /portal-admin/vouchers/lookup?code= result. */
+export interface VoucherLookup {
+  voucher_id?: string
+  code?: string
+  status?: 'active' | 'redeemed' | 'voided' | 'expired' | string
+  title?: string
+  description?: string
+  value?: string
+  holder?: string
+  expires?: string
+  expires_at?: string
+  template_id?: string
+}
+
+/** POST /coupon-templates body (create a reward template). */
+export interface CreateTemplateBody {
+  brand_id?: number | string
+  name: string
+  description?: string | null
+  image_url?: string | null
+  offer_type: 'free' | 'percent_off' | 'fixed_price'
+  original_price_cents?: number | null
+  discount_percent?: number | null
+  final_price_cents?: number | null
+  inventory_count?: number | null
+  expires_at?: number | null
+}
+
+// ---------------------------------------------------------------------------
 // Overview view · setup-guide card (Shopify-style onboarding checklist)
 // ---------------------------------------------------------------------------
 //
