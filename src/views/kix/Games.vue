@@ -17,18 +17,20 @@
    * target (play_url > game_file > unpacked_url); Customize is gated on a
    * real `order_id`.
    *
-   * DEFERRED (next increment): the 4-step Smart-Recommend creation wizard
-   * (describe → AI recommend → async build → launch checklist) and the
-   * embedded gamification IDE "Customize" modal. The "+ Create game" CTA
-   * and the Customize button route to the Builder for now.
+   * The 4-step Smart-Recommend creation wizard (describe → AI recommend →
+   * async build → launch checklist) lives in `games/CreateGameWizard.vue`;
+   * the embedded gamification IDE "Customize" modal in
+   * `games/CustomizeModal.vue`. "+ Create game" opens the wizard; Customize
+   * opens the IDE for that game's `order_id`.
    */
   import { computed, onMounted, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { useRouter } from 'vue-router'
   import { listBrandGames } from '@/api/portal-admin/games'
   import type { BrandGame } from '@/api/portal-admin/types'
   import { resolveBrandId } from '@/utils/kix/resolveBrandId'
   import StatusBadge from '@/components/StatusBadge.vue'
+  import CreateGameWizard from './games/CreateGameWizard.vue'
+  import CustomizeModal from './games/CustomizeModal.vue'
   import {
     normalizeGames,
     gameKpis,
@@ -39,11 +41,14 @@
   } from './games/gamesModel'
 
   const { t } = useI18n()
-  const router = useRouter()
 
   const loading = ref(true)
   const error = ref<string | null>(null)
   const games = ref<BrandGame[]>([])
+
+  const wizardOpen = ref(false)
+  const customizeOpen = ref(false)
+  const customizeOrderId = ref<string | null>(null)
 
   const kpis = computed(() => gameKpis(games.value))
   const kpiCards = computed(() => [
@@ -71,13 +76,13 @@
     if (href) window.open(href, '_blank')
   }
 
-  function customize() {
-    // IDE modal deferred — route to the build surface for now.
-    router.push('/builder')
+  function customize(g: BrandGame) {
+    customizeOrderId.value = g.order_id ?? null
+    customizeOpen.value = true
   }
 
   function createGame() {
-    router.push('/builder')
+    wizardOpen.value = true
   }
 
   onMounted(load)
@@ -191,7 +196,7 @@
               v-if="g.order_id"
               size="small"
               :data-testid="`customize-${g.id}`"
-              @click="customize"
+              @click="customize(g)"
             >
               Customize
             </ElButton>
@@ -199,5 +204,9 @@
         </div>
       </article>
     </div>
+
+    <!-- Smart-Recommend creation wizard + IDE customize modal -->
+    <CreateGameWizard v-model="wizardOpen" @built="load" />
+    <CustomizeModal v-model="customizeOpen" :order-id="customizeOrderId" @saved="load" />
   </div>
 </template>

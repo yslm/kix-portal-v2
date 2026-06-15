@@ -50,6 +50,79 @@ export interface BrandGame {
 }
 
 // ---------------------------------------------------------------------------
+// Games view · Smart-Recommend creation wizard
+// ---------------------------------------------------------------------------
+//
+// Source: kix-platform/landing/portal.html — `kixRecommendGames()` (~7708),
+// `kixSelectGame()` (~7989), order polling (~8107). Backend models in
+// portal_admin.py: GameRecommendRequest (~4427) / GameBuildRequest (~4432) /
+// the studio order payload `_studio_order_payload` (~4286).
+//
+// Flow: describe business → POST /games/recommend (AI ranker) → pick a match
+// → POST /games/build (async; returns an order_id) → poll
+// GET /games/orders/{order_id}?brand=<id> until status completed/failed/timeout
+// → launch. The `sample_brander` module is optional; a 502/503/504 on
+// /recommend falls back to a fixed set of starter games (no API needed).
+
+/** POST /games/recommend body. */
+export interface GameRecommendRequest {
+  business_description: string
+  top_n?: number
+}
+
+/** One ranked recommendation row (response item from /games/recommend).
+ *  `score` is a 0..1 match fraction; `reskin_difficulty` is a soft hint. */
+export interface GameRecommendation {
+  slug: string
+  name?: string
+  score?: number
+  reason?: string
+  reskin_difficulty?: 'easy' | 'hard' | string | null
+}
+
+/** POST /games/build body. brand_id is a numeric brand the build is fitted to. */
+export interface GameBuildRequest {
+  business_description: string
+  game_slug: string
+  brand_id: number
+  voucher_id?: number
+  regenerate_assets?: boolean
+  vertical?: string
+}
+
+/** POST /games/build response — the build is queued and an order created.
+ *  The R7 sync path may return status already `completed` with a game_file. */
+export interface GameBuildResponse {
+  order_id: string
+  status: GameOrderStatus
+  game_slug?: string
+  game_file?: string
+  cover_url?: string
+  voucher_id?: number | null
+  message?: string
+}
+
+export type GameOrderStatus = 'building' | 'completed' | 'failed' | 'timeout' | string
+
+/** GET /games/orders/{order_id} response (`_studio_order_payload`). */
+export interface GameOrder {
+  order_id: string
+  brand_id?: string
+  status: GameOrderStatus
+  game_slug?: string
+  game_name?: string
+  game_file?: string
+  game_id?: number | null
+  unpacked_url?: string | null
+  play_url?: string | null
+  voucher_id?: number | null
+  cover_url?: string | null
+  order_type?: 'reskin' | 'custom' | string
+  source_order_id?: string | null
+  error?: string | null
+}
+
+// ---------------------------------------------------------------------------
 // Overview view · live-cards grid
 // ---------------------------------------------------------------------------
 //

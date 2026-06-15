@@ -827,6 +827,59 @@ const MOCKS: Record<string, unknown> = {
       logo_url: ''
     }
   },
+  // Games · Smart-Recommend wizard (matcher ignores method + body/query).
+  // /games/recommend → ranked matches; /games/build → an order that is
+  // already completed (R7 sync path) so the wizard jumps straight to launch
+  // under demo; the order endpoint mirrors that completed order.
+  '/api/v1/portal-admin/games/recommend': [
+    {
+      slug: 'bubbletea_match3',
+      name: 'Bubble Tea Match-3',
+      score: 0.93,
+      reason: 'Match-3 suits grab-and-go F&B — quick plays during queues lift repeat visits.',
+      reskin_difficulty: 'easy'
+    },
+    {
+      slug: 'lucky_spin',
+      name: 'Lucky Spin Wheel',
+      score: 0.88,
+      reason: 'High-variance reward reveal drives daily check-ins for loyalty.',
+      reskin_difficulty: 'easy'
+    },
+    {
+      slug: 'scratch_win',
+      name: 'Scratch & Win',
+      score: 0.81,
+      reason: 'Instant-win scratch fits counter QR redemptions.',
+      reskin_difficulty: 'easy'
+    },
+    {
+      slug: 'trivia_quiz',
+      name: 'Brand Trivia',
+      score: 0.64,
+      reason: 'Quiz educates on new SKUs but converts slower than instant-win.',
+      reskin_difficulty: 'hard'
+    }
+  ],
+  '/api/v1/portal-admin/games/build': {
+    order_id: 'ord-demo-build',
+    status: 'completed',
+    game_slug: 'bubbletea_match3',
+    game_file: '/landing/games/demo/bubbletea_match3/index.html',
+    cover_url: '',
+    voucher_id: null,
+    message: 'Building your branded game — it will appear in My games shortly.'
+  },
+  '/api/v1/portal-admin/games/orders/ord-demo-build': {
+    order_id: 'ord-demo-build',
+    brand_id: 'demo',
+    status: 'completed',
+    game_slug: 'bubbletea_match3',
+    game_name: 'Bubble Tea Match-3',
+    game_file: '/landing/games/demo/bubbletea_match3/index.html',
+    play_url: '/play/demo/bubbletea_match3',
+    order_type: 'reskin'
+  },
   // Builder · opportunity score (POST; matcher ignores method + body).
   // Mid-band score with improvement hints so the hero card + bar show signal.
   '/api/v1/portal/builder/opportunity-score': {

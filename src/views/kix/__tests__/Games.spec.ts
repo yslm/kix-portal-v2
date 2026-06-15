@@ -4,8 +4,8 @@
  * Three regions:
  *   1. KPI summary strip — Total / Active / Playable / Customizable,
  *      computed from the loaded list (card-list anatomy).
- *   2. Header CTA — "+ Create game" → /builder (the Smart-Recommend
- *      creation wizard is deferred; the CTA routes to the build surface).
+ *   2. Header CTA — "+ Create game" opens the Smart-Recommend wizard
+ *      (CreateGameWizard, stubbed here; its own spec covers the flow).
  *   3. Card gallery — one .art-card per game with cover (image or
  *      gradient+emoji fallback), name, slug, status badge, and Play /
  *      Customize actions gated on real fields.
@@ -30,18 +30,23 @@ vi.mock('vue-i18n', () => ({
   useI18n: () => ({ t: (key: string) => key })
 }))
 
-const push = vi.fn()
-vi.mock('vue-router', () => ({
-  useRouter: () => ({ push })
-}))
-
 import Games from '../Games.vue'
 import { listBrandGames } from '@/api/portal-admin/games'
 
 const stubs = {
   ArtSvgIcon: { template: '<i />', props: ['icon'] },
   StatusBadge: { template: '<span>{{ status }}</span>', props: ['status'] },
-  ElButton: { template: '<button @click="$emit(\'click\')"><slot /></button>' }
+  ElButton: { emits: ['click'], template: '<button @click="$emit(\'click\')"><slot /></button>' },
+  // Stub the wizard + IDE modal — their own specs cover the flow. Reflect
+  // the bound `modelValue` so the open-on-CTA assertion can read it.
+  CreateGameWizard: {
+    props: ['modelValue', 'orderId'],
+    template: '<div data-testid="wizard-stub" :data-open="modelValue" />'
+  },
+  CustomizeModal: {
+    props: ['modelValue', 'orderId'],
+    template: '<div data-testid="customize-stub" :data-open="modelValue" :data-order="orderId" />'
+  }
 }
 
 const sample = [
@@ -134,13 +139,25 @@ describe('Games.vue · rebuilt gallery', () => {
     openSpy.mockRestore()
   })
 
-  it('"+ Create game" CTA routes to /builder', async () => {
+  it('"+ Create game" CTA opens the Smart-Recommend wizard', async () => {
     mockList.mockResolvedValueOnce({ data: sample })
     const wrapper = mountView()
     await flushPromises()
 
+    expect(wrapper.find('[data-testid="wizard-stub"]').attributes('data-open')).toBe('false')
     await wrapper.find('[data-testid="create-game"]').trigger('click')
-    expect(push).toHaveBeenCalledWith('/builder')
+    expect(wrapper.find('[data-testid="wizard-stub"]').attributes('data-open')).toBe('true')
+  })
+
+  it('Customize opens the IDE modal with the game order_id', async () => {
+    mockList.mockResolvedValueOnce({ data: sample })
+    const wrapper = mountView()
+    await flushPromises()
+
+    await wrapper.find('[data-testid="customize-g1"]').trigger('click')
+    const modal = wrapper.find('[data-testid="customize-stub"]')
+    expect(modal.attributes('data-open')).toBe('true')
+    expect(modal.attributes('data-order')).toBe('ord-1')
   })
 
   it('shows the empty hero when the brand has no games', async () => {

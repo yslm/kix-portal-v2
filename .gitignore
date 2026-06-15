@@ -18,3 +18,4 @@ locales/synced/
 e2e/test-results/
 playwright-report/
 test-results/
+.idea/
