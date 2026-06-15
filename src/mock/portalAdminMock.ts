@@ -372,8 +372,23 @@ const MOCKS: Record<string, unknown> = {
       }
     ]
   },
-  // Flows — { flows } wrapper. Mixed statuses + step counts.
+  // Flows — { flows } wrapper for the LIST view (GET). The wizard's create
+  // (POST /flows) shares this exact pathname, so the object ALSO carries the
+  // created-flow fields at top level (flow_id/steps/dates) — the list reads
+  // `.flows`, the wizard reads `res.data.flow_id`, both satisfied by one obj.
   '/api/v1/portal-admin/flows': {
+    flow_id: 'fl_demo01',
+    name: 'Ramadan · 30-day daily login',
+    status: 'draft',
+    start_date: '2026-03-01',
+    end_date: '2026-03-30',
+    steps_count: 3,
+    template_id: 'ramadan_30day',
+    steps: [
+      { step_id: 's1', label: 'Daily login → scratch ticket' },
+      { step_id: 's2', label: '7-day streak → iftar bundle voucher' },
+      { step_id: 's3', label: '30-day completion → tier upgrade' }
+    ],
     flows: [
       {
         flow_id: 'f-1',
@@ -399,6 +414,95 @@ const MOCKS: Record<string, unknown> = {
         steps_count: 5
       },
       { flow_id: 'f-4', name: 'Payday blast (draft)', status: 'draft', steps_count: 2 }
+    ]
+  },
+  // Flows · 4-step wizard. templates grid + create/update/simulate/publish
+  // (matcher ignores method + query/{id}; create/update/publish all map to
+  // the same flow path so they share this object — fine for demo render).
+  '/api/v1/portal-admin/flows/templates': {
+    total: 3,
+    templates: [
+      {
+        template_id: 'ramadan_30day',
+        name: 'Ramadan · 30-day daily login',
+        icon: '🌙',
+        category: 'seasonal',
+        summary: 'Daily-login scratch ticket → 7-day streak iftar unlock → 30-day tier upgrade.',
+        default_duration_days: 30,
+        best_for: ['grocery', 'q-commerce', 'f&b'],
+        steps_count: 3
+      },
+      {
+        template_id: 'welcome_7day_series',
+        name: 'Welcome · 7-day series',
+        icon: '👋',
+        category: 'acquisition',
+        summary: 'Signup → first-order game → 3 orders in 7 days → silver tier.',
+        default_duration_days: 7,
+        best_for: ['retail', 'f&b'],
+        steps_count: 3
+      },
+      {
+        template_id: 'family_referral_viral',
+        name: 'Family referral',
+        icon: '🎁',
+        category: 'viral',
+        summary: 'Referral signup → 3 referrals unlock a bonus spin.',
+        default_duration_days: 14,
+        best_for: ['retail'],
+        steps_count: 2
+      }
+    ]
+  },
+  // Flows · wizard update + publish (PUT/POST /flows/{id}) — the matcher
+  // keeps the {id}; this id matches the merged flow object on /flows (create).
+  '/api/v1/portal-admin/flows/fl_demo01': {
+    flow_id: 'fl_demo01',
+    name: 'Ramadan · 30-day daily login',
+    status: 'published',
+    start_date: '2026-03-01',
+    end_date: '2026-03-30',
+    steps_count: 3,
+    template_id: 'ramadan_30day',
+    steps: [
+      { step_id: 's1', label: 'Daily login → scratch ticket' },
+      { step_id: 's2', label: '7-day streak → iftar bundle voucher' },
+      { step_id: 's3', label: '30-day completion → tier upgrade' }
+    ]
+  },
+  // Flows · wizard publish (POST /flows/{id}/publish) — draft → published.
+  '/api/v1/portal-admin/flows/fl_demo01/publish': {
+    flow_id: 'fl_demo01',
+    name: 'Ramadan · 30-day daily login',
+    status: 'published',
+    start_date: '2026-03-01',
+    end_date: '2026-03-30',
+    steps_count: 3,
+    template_id: 'ramadan_30day',
+    steps: [
+      { step_id: 's1', label: 'Daily login → scratch ticket' },
+      { step_id: 's2', label: '7-day streak → iftar bundle voucher' },
+      { step_id: 's3', label: '30-day completion → tier upgrade' }
+    ]
+  },
+  // Flows · wizard simulation (POST /flows/{id}/simulate) — backend-computed
+  // funnel + costs; demo seed mirrors campaign_flows.py simulate_flow().
+  '/api/v1/portal-admin/flows/fl_demo01/simulate': {
+    flow_id: 'fl_demo01',
+    audience_size: 100000,
+    projected_reach: 61800,
+    final_completers: 16637,
+    currency_code: 'SGD',
+    currency_symbol: 'S$',
+    projected_total_cost: 63400,
+    projected_cost_per_completer: 3.81,
+    projected_uplift: { repeat_rate_pp: 18, session_per_user_increase: 12 },
+    summary_sentence:
+      '16,637 of 100,000 finish all steps · You pay S$63,400 total · Average S$3.81 per new customer.',
+    step_funnel: [
+      { step_id: 's1', label: 'Daily login → scratch ticket', completers: 55000 },
+      { step_id: 's2', label: '7-day streak → iftar bundle voucher', completers: 30250 },
+      { step_id: 's3', label: '30-day completion → tier upgrade', completers: 16637 }
     ]
   },
   // Templates — canonical { games, total, reskin_count } wrapper. No

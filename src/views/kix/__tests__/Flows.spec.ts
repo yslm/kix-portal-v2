@@ -9,12 +9,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
 
-vi.mock('@/api/portal-admin/flows', () => ({ listFlows: vi.fn() }))
+vi.mock('@/api/portal-admin/flows', () => ({
+  listFlows: vi.fn(),
+  listFlowTemplates: vi.fn(),
+  createFlow: vi.fn(),
+  updateFlow: vi.fn(),
+  simulateFlow: vi.fn(),
+  publishFlow: vi.fn()
+}))
 vi.mock('@/utils/kix/resolveBrandId', () => ({ resolveBrandId: () => 'demo_brand' }))
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k: string) => k }) }))
-
-const push = vi.fn()
-vi.mock('vue-router', () => ({ useRouter: () => ({ push }) }))
 
 import Flows from '../Flows.vue'
 import { listFlows } from '@/api/portal-admin/flows'
@@ -37,11 +41,15 @@ const stubs = {
   ArtTable: ArtTableStub,
   ArtSvgIcon: { template: '<i />', props: ['icon'] },
   StatusBadge: { template: '<span />', props: ['status'] },
-  ElButton: { template: '<button @click="$emit(\'click\')"><slot /></button>' },
+  ElButton: { emits: ['click'], template: '<button @click="$emit(\'click\')"><slot /></button>' },
   ElInput: {
     template:
       '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
     props: ['modelValue']
+  },
+  CreateFlowWizard: {
+    props: ['modelValue'],
+    template: '<div data-testid="flow-wizard-stub" :data-open="modelValue" />'
   }
 }
 
@@ -102,12 +110,13 @@ describe('Flows.vue · rebuilt view', () => {
     expect(w.find('[data-testid="row-f3"]').exists()).toBe(true)
   })
 
-  it('+ Create flow routes to /builder', async () => {
+  it('+ Create flow opens the creation wizard', async () => {
     mockList.mockResolvedValueOnce({ data: { flows: sample } })
     const w = mountView()
     await flushPromises()
+    expect(w.find('[data-testid="flow-wizard-stub"]').attributes('data-open')).toBe('false')
     await w.find('[data-testid="flows-create"]').trigger('click')
-    expect(push).toHaveBeenCalledWith('/builder')
+    expect(w.find('[data-testid="flow-wizard-stub"]').attributes('data-open')).toBe('true')
   })
 
   it('shows empty + error states', async () => {

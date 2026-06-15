@@ -406,6 +406,71 @@ export type FlowsListResponse =
   | ApiListResponse<AutomationFlow>
 
 // ---------------------------------------------------------------------------
+// Flows · 4-step creation wizard (deferred feature, now shipped)
+// ---------------------------------------------------------------------------
+//
+// Source: portal.html #view-flows wizard (1559-1722) + campaign_flows.py
+// (templates ~237 / create ~311 / update ~428 / simulate ~518 / publish ~472).
+
+/** One starter template (GET /flows/templates → { templates, total }). */
+export interface FlowTemplate {
+  template_id: string
+  name: string
+  icon?: string
+  category?: string
+  summary?: string
+  default_duration_days?: number
+  best_for?: string[]
+  steps_count?: number
+  estimated_per_user_cost_sar?: number
+  estimated_uplift?: { repeat_rate_pp?: number; session_per_user_increase?: number }
+}
+
+export interface FlowTemplatesResponse {
+  templates?: FlowTemplate[]
+  items?: FlowTemplate[]
+  total?: number
+}
+
+/** A read-only step in the customize preview (from the created flow). */
+export interface FlowStep {
+  step_id?: string
+  label?: string
+  trigger?: { kind?: string }
+  actions?: { kind?: string; value_sar?: number }[]
+  stage?: { kind?: string; target?: string }
+}
+
+/** The full flow record returned by create / update / publish. */
+export interface CampaignFlow extends AutomationFlow {
+  steps?: FlowStep[]
+  description?: string
+}
+
+/** POST /flows/{id}/simulate body. */
+export interface FlowSimulationRequest {
+  audience_size: number
+  base_repeat_rate: number
+  start_date?: string
+  end_date?: string
+}
+
+/** Simulation result (backend-computed funnel + costs). */
+export interface FlowSimulation {
+  flow_id?: string
+  audience_size?: number
+  projected_reach?: number
+  step_funnel?: { step_id?: string; label?: string; completers: number }[]
+  final_completers?: number
+  currency_code?: string
+  currency_symbol?: string
+  projected_total_cost?: number
+  projected_cost_per_completer?: number
+  projected_uplift?: { repeat_rate_pp?: number; session_per_user_increase?: number }
+  summary_sentence?: string
+}
+
+// ---------------------------------------------------------------------------
 // Reports view · owner summary card (Simple mode)
 // ---------------------------------------------------------------------------
 //

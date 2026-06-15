@@ -14,19 +14,19 @@
    * steps_count / template_id.
    *
    * Wave4 W4-C · B36: merchant-facing label is "Campaign"; wire field
-   * names stay "flow" (portal.html:1532-1536). DEFERRED (large stateful
-   * feature, not a restyle): the 4-step wizard (pick template → customize
-   * → simulate funnel → publish), the templates grid, the simulator panel
-   * and per-step preview/edit modals. "+ Create flow" routes to /builder.
+   * names stay "flow" (portal.html:1532-1536). The 4-step creation wizard
+   * (pick template → customize → simulate funnel → publish) lives in
+   * `flows/CreateFlowWizard.vue`; "+ Create flow" opens it and the list
+   * reloads on `created`.
    */
   import { computed, h, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { useRouter } from 'vue-router'
   import { listFlows } from '@/api/portal-admin/flows'
   import type { AutomationFlow } from '@/api/portal-admin/types'
   import type { ColumnOption } from '@/types/component'
   import { resolveBrandId } from '@/utils/kix/resolveBrandId'
   import StatusBadge from '@/components/StatusBadge.vue'
+  import CreateFlowWizard from './flows/CreateFlowWizard.vue'
   import {
     normalizeFlows,
     flowKpis,
@@ -38,8 +38,8 @@
   } from './flows/flowsModel'
 
   const { t } = useI18n()
-  const router = useRouter()
 
+  const wizardOpen = ref(false)
   const loading = ref(true)
   const error = ref<string | null>(null)
   const all = ref<AutomationFlow[]>([])
@@ -151,7 +151,7 @@
         <h1 class="text-2xl font-bold">{{ t('portal.flows.title') }}</h1>
         <p class="text-sm text-gray-500 mt-1">{{ t('portal.flows.subtitle') }}</p>
       </div>
-      <ElButton type="primary" data-testid="flows-create" @click="router.push('/builder')">
+      <ElButton type="primary" data-testid="flows-create" @click="wizardOpen = true">
         + Create flow
       </ElButton>
     </header>
@@ -223,5 +223,7 @@
         @pagination:size-change="handleSizeChange"
       />
     </ElCard>
+
+    <CreateFlowWizard v-model="wizardOpen" @created="load" />
   </div>
 </template>
