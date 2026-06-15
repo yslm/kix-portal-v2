@@ -42,6 +42,8 @@
     "settings": "设置"
   },
 
+  "portal.billing.title": "账单",
+  "portal.billing.subtitle": "钱包余额、各品牌消费与发票。",
   "portal.cases.subtitle": "针对每位潜在客户的调研 + 品牌化 12 页路演 Deck。三源验证 · 所有论断可追溯到 file:line。",
   "portal.geofences.subtitle": "每个门店都是一个地理围栏 —— 员工 QR、核销与位置触发活动都以此列表为准。",
   "portal.creatives.title": "素材库",

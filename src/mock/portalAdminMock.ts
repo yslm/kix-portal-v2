@@ -538,6 +538,35 @@ const MOCKS: Record<string, unknown> = {
       { name: 'Platinum', min_xp: 5000, perk: 'Concierge + early drops', members: 7 }
     ]
   },
+  // Billing — merged wallet + invoices + per_brand. The rebuilt view
+  // surfaces per_brand (the legacy view ignored it).
+  '/api/v1/portal-admin/billing': {
+    balance_sgd: 1842.5,
+    burn7_sgd: 311.2,
+    burn_daily_sgd: 44.46,
+    days_runway: 41,
+    per_brand: [
+      { brand: 'demo', spend7_sgd: 311.2, spend30_sgd: 1284.6 },
+      { brand: 'demo-sg', spend7_sgd: 88.0, spend30_sgd: 402.5 }
+    ],
+    invoices: [
+      {
+        number: 'INV-2026-0312',
+        date: '2026-06-01',
+        total_sgd: 500,
+        status: 'paid',
+        pdf_url: '/invoices/INV-2026-0312.pdf'
+      },
+      {
+        number: 'INV-2026-0288',
+        date: '2026-05-01',
+        total_sgd: 500,
+        status: 'paid',
+        pdf_url: '/invoices/INV-2026-0288.pdf'
+      },
+      { number: 'INV-2026-0264', date: '2026-04-01', total_sgd: 320, status: 'pending' }
+    ]
+  },
   // 14-day cohort — bare CohortRow[] (newest last).
   '/api/v1/portal-admin/reports/cohort': [
     { cohort_day: '2026-05-30', new_customers: 7 },
