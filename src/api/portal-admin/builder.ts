@@ -1,5 +1,10 @@
 import { http } from './http'
-import type { OpportunityScore, OpportunityScoreRequest } from './types'
+import type {
+  OpportunityScore,
+  OpportunityScoreRequest,
+  VoucherTemplatesResponse,
+  PublishResponse
+} from './types'
 
 /**
  * POST /api/v1/portal/builder/opportunity-score
@@ -32,3 +37,33 @@ export const defaultEmptyConfig: OpportunityScoreRequest = {
   safety: {},
   audience: { type: 'recent_visitors_7d' }
 }
+
+// ---------------------------------------------------------------------------
+// Module sub-forms + publish (Builder deferred feature, now shipped)
+// ---------------------------------------------------------------------------
+
+/** GET /builder/voucher-templates?vertical=<v> — populates the voucher
+ *  template select for the chosen vertical. */
+export const fetchVoucherTemplates = (vertical: string) =>
+  http.get<VoucherTemplatesResponse>('/api/v1/portal/builder/voucher-templates', {
+    params: { vertical }
+  })
+
+/** POST /builder/rule-configure — persists the rule module to Redis so the
+ *  publish step can read it (legacy reads rule/schedule server-side). */
+export const configureRule = (body: Record<string, unknown>) =>
+  http.post('/api/v1/portal/builder/rule-configure', body)
+
+/** POST /builder/schedule-configure — persists the schedule module to Redis
+ *  (publish reads `brand:{bid}:builder_schedule`). */
+export const configureSchedule = (body: Record<string, unknown>) =>
+  http.post('/api/v1/portal/builder/schedule-configure', body)
+
+/**
+ * POST /builder/publish — atomic campaign publish. game/voucher/safety/
+ * tournament come from the body; rule/schedule are read from Redis (hence
+ * the configure calls above must run first). A KYC gate returns HTTP 403
+ * with `{ error: 'kyc_required', next }` — handle on the axios error.
+ */
+export const publishCampaign = (body: Record<string, unknown>) =>
+  http.post<PublishResponse>('/api/v1/portal/builder/publish', body)

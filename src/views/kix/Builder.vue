@@ -1,36 +1,76 @@
 <script setup lang="ts">
   /**
-   * Builder view — rebuilt onto art-design-pro components (Week 8o).
+   * Builder view — entry surface + the 6 module sub-forms + publish.
    *
-   * Source: portal.html #view-builder (lines 846-1190), endpoint POST
-   * /api/v1/portal/builder/opportunity-score. Rebuilds the entry surface:
-   * the opportunity-score as a hero `.art-card` (big score + progress bar +
-   * improvement hints) and the 6 build blocks as polished `.art-card`s with
-   * icon squares. Logic in `builder/builderModel.ts`.
+   * Source: portal.html #view-builder (846-1190). The opportunity-score hero
+   * (big score + bar + hints) and the 6 build-block cards land from the
+   * Week 8o entry rebuild; this increment ships the deferred FEATURE:
    *
-   * DEFERRED (large stateful feature, not a restyle): the 6 module sub-forms
-   * (game/voucher/rule/schedule/safety/tournament), seasonal packs, AI
-   * audience summary, save-draft / publish flow + live build overlay. Each
-   * block surfaces a "coming soon" hint on click (unchanged intent).
+   *  - each block opens a ModuleEditor dialog with its real fields
+   *    (game / voucher / rule / schedule / safety / tournament)
+   *  - saving a module re-scores live (POST /builder/opportunity-score with
+   *    the assembled cfg) and snapshots a per-brand draft to localStorage
+   *  - "Save draft" persists; "Publish" validates, configures rule + schedule
+   *    server-side, then POSTs /builder/publish — handling the KYC 403 gate
+   *    and navigating to Campaigns on success.
+   *
+   * Pure logic (field specs, collectors, cfg/publish assembly, validation,
+   * draft persistence) lives in builder/builderForms.ts (unit-tested).
    */
   import { computed, onMounted, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { defaultEmptyConfig, fetchOpportunityScore } from '@/api/portal-admin/builder'
-  import type { OpportunityScore } from '@/api/portal-admin/types'
+  import { useRouter } from 'vue-router'
+  import {
+    fetchOpportunityScore,
+    fetchVoucherTemplates,
+    configureRule,
+    configureSchedule,
+    publishCampaign
+  } from '@/api/portal-admin/builder'
+  import type { OpportunityScore, VoucherTemplate } from '@/api/portal-admin/types'
+  import { resolveBrandId } from '@/utils/kix/resolveBrandId'
   import { BUILD_MODULES, scoreTone, potentialGain, scorePct } from './builder/builderModel'
+  import type { BuildModuleId } from './builder/builderModel'
+  import {
+    defaultState,
+    loadDraft,
+    saveDraft,
+    isConfigured,
+    assembleScoreCfg,
+    assemblePublishBody,
+    validatePublish,
+    collectRule,
+    collectSchedule,
+    type BuilderState,
+    type FieldValues,
+    type SelectOption
+  } from './builder/builderForms'
+  import ModuleEditor from './builder/ModuleEditor.vue'
 
   const { t } = useI18n()
+  const router = useRouter()
 
   const loading = ref(true)
   const error = ref<string | null>(null)
   const opp = ref<OpportunityScore | null>(null)
+
+  const state = ref<BuilderState>(loadDraft(resolveBrandId()) ?? defaultState())
+
+  // editor dialog
+  const editorOpen = ref(false)
+  const editingModule = ref<BuildModuleId | null>(null)
+  const voucherTemplates = ref<SelectOption[]>([])
+
+  // publish state
+  const publishing = ref(false)
+  const publishResult = ref<{ ok: boolean; text: string } | null>(null)
+  const validationErrors = ref<string[]>([])
 
   const score = computed(() => opp.value?.score ?? 0)
   const pct = computed(() => scorePct(score.value))
   const tone = computed(() => scoreTone(score.value))
   const gain = computed(() => potentialGain(opp.value))
 
-  // Tone → art-design-pro semantic colour for the score + bar.
   const toneClass = computed(() =>
     tone.value === 'high' ? 'text-success' : tone.value === 'mid' ? 'text-theme' : 'text-danger'
   )
@@ -38,23 +78,115 @@
     tone.value === 'high' ? 'bg-success' : tone.value === 'mid' ? 'bg-theme' : 'bg-danger'
   )
 
+  const editorTitle = computed(() => {
+    const m = BUILD_MODULES.find((b) => b.id === editingModule.value)
+    return m ? t(m.i18nKey) : ''
+  })
+  const editorInitial = computed<FieldValues>(() =>
+    editingModule.value ? state.value[editingModule.value] : {}
+  )
+  const dynamicOptions = computed(() => ({ template_id: voucherTemplates.value }))
+
+  async function rescore() {
+    try {
+      const res = await fetchOpportunityScore(assembleScoreCfg(state.value))
+      opp.value = res.data
+    } catch (e: unknown) {
+      error.value = e instanceof Error ? e.message : String(e)
+    }
+  }
+
   async function load() {
     loading.value = true
     error.value = null
     try {
-      const res = await fetchOpportunityScore(defaultEmptyConfig)
+      const res = await fetchOpportunityScore(assembleScoreCfg(state.value))
       opp.value = res.data
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : String(e)
     } finally {
       loading.value = false
     }
+    loadVoucherTemplates(String(state.value.voucher.vertical ?? 'bubble_tea'))
   }
 
-  function openModule(id: string) {
-    // Module sub-forms deferred — surface the click intent.
-    if (typeof window !== 'undefined' && typeof window.alert === 'function') {
-      window.alert(`Coming soon: ${id} form`)
+  async function loadVoucherTemplates(vertical: string) {
+    try {
+      const res = await fetchVoucherTemplates(vertical)
+      const list = res.data?.templates ?? res.data?.items ?? []
+      voucherTemplates.value = list.map((tpl: VoucherTemplate) => ({
+        value: tpl.id,
+        label: tpl.label || tpl.label_zh_sg || tpl.id
+      }))
+      // auto-select the backend default when none chosen yet (legacy as_default)
+      const def = list.find((tpl) => tpl.is_default) ?? list[0]
+      if (def && !state.value.voucher.template_id) state.value.voucher.template_id = def.id
+    } catch {
+      voucherTemplates.value = []
+    }
+  }
+
+  function openModule(id: BuildModuleId) {
+    editingModule.value = id
+    editorOpen.value = true
+  }
+
+  function onFieldChange({ field, value }: { field: string; value: unknown }) {
+    // refetch voucher templates when the vertical changes inside the editor
+    if (editingModule.value === 'voucher' && field === 'vertical') {
+      loadVoucherTemplates(String(value))
+    }
+  }
+
+  function onModuleSave(values: FieldValues) {
+    if (!editingModule.value) return
+    state.value[editingModule.value] = values
+    saveDraft(resolveBrandId(), state.value)
+    publishResult.value = null
+    validationErrors.value = []
+    rescore()
+  }
+
+  function configured(id: BuildModuleId) {
+    return isConfigured(id, state.value)
+  }
+
+  function onSaveDraft() {
+    saveDraft(resolveBrandId(), state.value)
+    publishResult.value = { ok: true, text: 'Draft saved on this device.' }
+  }
+
+  async function onPublish() {
+    validationErrors.value = validatePublish(state.value)
+    if (validationErrors.value.length > 0) return
+
+    publishing.value = true
+    publishResult.value = null
+    const brand = resolveBrandId()
+    try {
+      // rule + schedule are read server-side at publish — persist them first
+      await configureRule({ brand_id: brand, ...collectRule(state.value.rule) })
+      await configureSchedule({ brand_id: brand, ...collectSchedule(state.value.schedule) })
+      const name = `Campaign · ${new Date().toISOString().slice(0, 10)}`
+      const res = await publishCampaign(assemblePublishBody(brand, name, state.value))
+      const data = res.data
+      if (data?.ok) {
+        publishResult.value = { ok: true, text: `Published · ${data.campaign?.id ?? ''}` }
+        setTimeout(() => router.push('/campaigns'), 800)
+      } else {
+        publishResult.value = { ok: false, text: data?.error || 'Publish failed.' }
+      }
+    } catch (e: unknown) {
+      const err = e as { response?: { status?: number; data?: { error?: string; next?: string } } }
+      if (err?.response?.status === 403 && err.response.data?.error === 'kyc_required') {
+        publishResult.value = { ok: false, text: 'Add a payment method to publish.' }
+        const next = err.response.data?.next
+        if (next && typeof window !== 'undefined') window.location.href = next
+      } else {
+        publishResult.value = { ok: false, text: e instanceof Error ? e.message : String(e) }
+      }
+    } finally {
+      publishing.value = false
     }
   }
 
@@ -63,10 +195,40 @@
 
 <template>
   <div class="kix-builder p-5 space-y-5">
-    <header>
-      <h1 class="text-2xl font-bold">{{ t('portal.builder.title') }}</h1>
-      <p class="text-sm text-gray-500 mt-1">{{ t('portal.builder.sub') }}</p>
+    <header class="flex items-end justify-between gap-4 flex-wrap">
+      <div>
+        <h1 class="text-2xl font-bold">{{ t('portal.builder.title') }}</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ t('portal.builder.sub') }}</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <ElButton data-testid="builder-save-draft" @click="onSaveDraft">Save draft</ElButton>
+        <ElButton
+          type="primary"
+          :loading="publishing"
+          data-testid="builder-publish"
+          @click="onPublish"
+        >
+          Publish campaign
+        </ElButton>
+      </div>
     </header>
+
+    <!-- publish feedback -->
+    <div
+      v-if="publishResult"
+      data-testid="publish-result"
+      class="text-sm rounded-lg px-3 py-2"
+      :class="publishResult.ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'"
+    >
+      {{ publishResult.ok ? '✓' : '⚠' }} {{ publishResult.text }}
+    </div>
+    <ul
+      v-if="validationErrors.length"
+      data-testid="publish-errors"
+      class="text-sm rounded-lg px-3 py-2 bg-amber-50 text-amber-700 list-disc pl-6"
+    >
+      <li v-for="(e, i) in validationErrors" :key="i">{{ e }}</li>
+    </ul>
 
     <!-- Opportunity-score hero card -->
     <div
@@ -86,7 +248,6 @@
 
     <ElCard v-else-if="opp" shadow="never" data-testid="opp-score-card">
       <div class="flex flex-col md:flex-row md:items-center gap-6">
-        <!-- Score block -->
         <div class="shrink-0 md:w-64">
           <div class="text-xs font-bold tracking-wider uppercase text-gray-500 mb-1">
             {{ t('portal.builder.opp.label') }}
@@ -112,7 +273,6 @@
           </div>
         </div>
 
-        <!-- Hints -->
         <ul
           v-if="opp.hints && opp.hints.length > 0"
           class="flex-1 list-none p-0 m-0 space-y-2"
@@ -153,10 +313,16 @@
           v-for="m in BUILD_MODULES"
           :key="m.id"
           type="button"
-          class="art-card flex flex-col items-center gap-3 px-3 py-5 transition-transform duration-200 hover:-translate-y-0.5"
+          class="art-card relative flex flex-col items-center gap-3 px-3 py-5 transition-transform duration-200 hover:-translate-y-0.5"
           :data-testid="`module-${m.id}`"
           @click="openModule(m.id)"
         >
+          <span
+            v-if="configured(m.id)"
+            class="absolute top-2 right-2 size-4 rounded-full flex-cc bg-success text-white text-[10px]"
+            :data-testid="`module-done-${m.id}`"
+            >✓</span
+          >
           <div class="size-12 rounded-xl flex-cc bg-theme/10">
             <ArtSvgIcon :icon="m.icon" class="text-xl text-theme" />
           </div>
@@ -164,5 +330,15 @@
         </button>
       </div>
     </ElCard>
+
+    <ModuleEditor
+      v-model="editorOpen"
+      :module-id="editingModule"
+      :title="editorTitle"
+      :initial="editorInitial"
+      :dynamic-options="dynamicOptions"
+      @save="onModuleSave"
+      @field-change="onFieldChange"
+    />
   </div>
 </template>

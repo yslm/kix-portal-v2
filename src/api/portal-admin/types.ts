@@ -317,6 +317,43 @@ export interface OpportunityScoreRequest {
 }
 
 // ---------------------------------------------------------------------------
+// Builder · module sub-forms + publish (deferred feature, now shipped)
+// ---------------------------------------------------------------------------
+//
+// Source: portal.html publish flow (~10009) + portal_admin.py
+// BuilderPublishRequest (~251) / publish guard (~328-423) /
+// voucher-templates (~/builder/voucher-templates) / rule-configure /
+// schedule-configure.
+
+/** One row from GET /builder/voucher-templates?vertical=<v>. */
+export interface VoucherTemplate {
+  id: string
+  label?: string
+  label_zh_sg?: string
+  value_sgd?: number
+  value_local_cents?: number
+  value_local_currency?: string
+  is_default?: boolean
+}
+
+export interface VoucherTemplatesResponse {
+  templates?: VoucherTemplate[]
+  items?: VoucherTemplate[]
+}
+
+/**
+ * POST /builder/publish response. Success → `{ ok: true, campaign: {...} }`.
+ * KYC gate → HTTP 403 with `{ error: 'kyc_required', next: '<add-card url>' }`
+ * (surfaced from the axios error, not this success type).
+ */
+export interface PublishResponse {
+  ok?: boolean
+  campaign?: { id: string; name?: string; status?: string }
+  error?: string
+  next?: string
+}
+
+// ---------------------------------------------------------------------------
 // Flows view · my-flows gallery
 // ---------------------------------------------------------------------------
 //

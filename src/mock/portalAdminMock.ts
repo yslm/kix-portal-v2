@@ -889,6 +889,24 @@ const MOCKS: Record<string, unknown> = {
       { points: 12, label: 'Set a schedule — limited-time runs lift urgency' },
       { points: 8, label: 'Attach a store geofence to drive footfall' }
     ]
+  },
+  // Builder · voucher templates for the chosen vertical (query stripped by
+  // the matcher). One marked is_default so the voucher module auto-selects it.
+  '/api/v1/portal/builder/voucher-templates': {
+    templates: [
+      { id: 'tmpl_5off', label: 'S$5 off', value_sgd: 5, is_default: true },
+      { id: 'tmpl_free_drink', label: 'Free drink', value_sgd: 4.5 },
+      { id: 'tmpl_bogo', label: 'Buy 1 get 1', value_sgd: 8 }
+    ]
+  },
+  // Builder · rule + schedule configure (POST; persisted server-side at publish).
+  '/api/v1/portal/builder/rule-configure': { ok: true, rule: {} },
+  '/api/v1/portal/builder/schedule-configure': { ok: true, schedule: {} },
+  // Builder · publish (POST; matcher ignores method + body). Returns the
+  // created campaign so the result banner + navigate work under demo.
+  '/api/v1/portal/builder/publish': {
+    ok: true,
+    campaign: { id: 'camp_demo01', name: 'Campaign · demo', status: 'live' }
   }
 }
 
