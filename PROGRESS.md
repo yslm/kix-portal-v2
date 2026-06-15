@@ -547,6 +547,52 @@ Verify: `pnpm vitest run` (expect 306+), `pnpm tsc --noEmit 2>&1 | grep -E "erro
 
 ---
 
+## Week 8k–8n: heavy P2 views rebuilt — VipTiers · Billing · Rewards · Storefront (2026-06-15)
+
+**Status: DONE — the 4 structurally-different P2 views committed, each headless-reviewed.** User confirmed "继续，按各自形态重建" — these are NOT simple list/card, so each got a per-view treatment (not the rote ArtTable/gallery template). **This completes the entire breadth track: all 7 P1 list views + all 8 P2 views rebuilt onto art-design-pro.**
+
+### Commits
+
+- d558c15 feat(vip-tiers): ArtTable ladder + KPI strip + distribution bars
+- b0a533a feat(billing): wallet KPI strip + per-brand + invoices ArtTables
+- 9c97b4d feat(rewards): ElTabs + KPI strip + Templates card gallery
+- bac78cc feat(storefront): analytics KPI strip + preview + share cards
+
+### Per view (all: pure `*Model.ts` unit-tested + rewritten view spec + demo mock)
+
+| View | Shape chosen | Surfaced NEW real data | Notes |
+| --- | --- | --- | --- |
+| **VipTiers** | KPI + ArtTable ladder + bar card | member counts JOINED into ladder by name | distribution 503 → members em-dash, ladder still renders; stacked (2-col clipped the 4-col table) |
+| **Billing** | wallet KPI strip + 2 ArtTables | **per_brand spend** (legacy ignored it) | money prefers raw SGD via fmtSgd → pre-formatted str → em-dash |
+| **Rewards** | KPI + ElTabs + card gallery | catalog value / limited-stock KPIs | type filter (fixed enum); 3 stub tabs restyled |
+| **Storefront** | analytics KPI strip + 2 cards | **follower/rating/featured** (legacy typed but never rendered) | origin injected into model for testable URL/embed builders |
+
+### Pattern note (when the rote template doesn't fit)
+
+The list/card recipe is for list/gallery views. For these four: **VipTiers/Billing** → ArtTable(s) but with a JOIN / multi-table; **Rewards** → native ElTabs wrapping the gallery; **Storefront** → preview + share cards (no table at all). The constant across all of them is the **card-list KPI strip** (canonical `.art-card` + `bg-theme/10` icon square) and **NO-FAKE-DATA** (every KPI/column from a verified real field; several views now SURFACE real fields the legacy ignored — per_brand, storefront analytics, tier member counts).
+
+### i18n overrides (continued from 33ec83a)
+
+billing / rewards / storefront title+subtitle were all MISSING in both wired locales — added as portal-layer overrides in `locales/portal/{en,zh}.json` (survives `sync:locales`). All H1s now resolve (账单 / 奖励 / 店面). The override block now covers: cases.subtitle, geofences.subtitle, creatives.title/subtitle, billing._, rewards._, storefront.\*.
+
+### Result
+
+- Tests **330/330** (306 → 313 VipTiers → 319 Billing → 325 Rewards → 330 Storefront). tsc zero new production errors throughout.
+- Headless confirmed every view renders native to art-design-pro with working KPIs + filters/tabs.
+
+### ▶ RESUME HERE NEXT (breadth track ~complete)
+
+**Every P1 + P2 view is rebuilt.** What remains:
+
+- **Builder** entry view (still thin, ~170 lines) — the one non-rebuilt main view. It's a creation surface (entry into the game-build flow), not a list; treat like Storefront (per-view).
+- **Deferred FEATURES** (the big stateful surfaces intentionally not built — each is a mini-project, confirm priority with user): Games Smart-Recommend wizard; Flows 4-step wizard; Rewards 3 stub tabs (Game links / Issuance / Redemption) + Templates editor; VipTiers tier editor; Storefront customization editor; Billing recharge/payment-methods; Templates sort/rank/detail/Try-demo; Geofences add-store + map; Creatives upload; Cases new-case + deck.
+- **Polish nits**: reconcile Overview `CampaignTable.vue` / Reports `TopCampaignsTable.vue` to real-field-first; abtests/rules raw-key i18n (now trivially fixable via the proven portal-override mechanism — add the 4 keys to `locales/portal/{en,zh}.json`).
+- **Production cutover** (below) is now much closer — all merchant-facing views are on the art-design-pro language.
+
+Verify: `pnpm vitest run` (expect 330+), `pnpm tsc --noEmit 2>&1 | grep -E "error TS" | grep -v "\.vue'"` (none), `pnpm dev:mock` + `?brand=demo#/<route>` (routes added this batch: /vip-tiers /billing /rewards /storefront).
+
+---
+
 ## Future: Production cutover (HELD — deferred until view deepening complete)
 
 Originally Plan 7. Now deferred to after all view-deepening passes finish (Week 7 Overview + Plan 8+ for the remaining 17 views) AND user signs off on visual parity per view.
