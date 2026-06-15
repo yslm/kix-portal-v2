@@ -154,6 +154,33 @@ describe('CampaignTable.vue', () => {
     expect(badges[0].attributes('data-status')).toBe('active')
   })
 
+  it('prefers real fields over aliases (spend_sgd / new_customers / cpa_sgd)', async () => {
+    ;(listCampaigns as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      data: [
+        {
+          id: 'c-real',
+          name: 'Real-field row',
+          status: 'active',
+          // BOTH real + alias present → real wins
+          spend_sgd: 285,
+          spend_str: 'S$999',
+          new_customers: 180,
+          conversions: 5,
+          cpa_sgd: 1.58,
+          cpa_str: 'S$99.00'
+        }
+      ]
+    })
+    const wrapper = mount(CampaignTable, { global: { stubs } })
+    await flushPromises()
+    const text = wrapper.text()
+    expect(text).toContain('S$285') // spend_sgd via fmtSgd, NOT spend_str S$999
+    expect(text).not.toContain('S$999')
+    expect(text).toContain('180') // new_customers, NOT conversions 5
+    expect(text).toContain('S$1.58') // cpa_sgd via fmtSgd, NOT cpa_str S$99.00
+    expect(text).not.toContain('S$99.00')
+  })
+
   it('normalises the { campaigns: [...] } wrapper shape', async () => {
     ;(listCampaigns as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       data: { campaigns: sampleCampaigns }

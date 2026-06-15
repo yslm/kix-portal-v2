@@ -51,13 +51,26 @@
 
   const rows = computed<Campaign[]>(() => (data.value ? normalize(data.value) : []))
 
-  // Precedence: spend_str first, fmtSgd(spend_sgd) as fallback — per T5 spec.
-  // NOTE: this is the INVERSE of Campaigns.vue, which prefers the numeric spend_sgd.
-  // If the backend sends both fields, the Overview table and the Campaigns page may
-  // display the spend amount differently (one formatted server-side, one client-side).
+  // Real-field-first (reconciled with Campaigns.vue / TopCampaignsTable):
+  // prefer the numeric spend_sgd via fmtSgd, fall back to the pre-formatted
+  // spend_str alias, em-dash when neither. One consistent S$ format across
+  // every campaign surface.
   function spendCell(c: Campaign): string {
-    if (c.spend_str) return c.spend_str
     if (c.spend_sgd != null) return fmtSgd(c.spend_sgd)
+    if (c.spend_str) return c.spend_str
+    return '—'
+  }
+
+  // Real "verified new customers" first; legacy `conversions` alias fallback.
+  function newCustomersCell(c: Campaign): string {
+    const v = c.new_customers ?? c.conversions
+    return v == null ? '—' : v.toLocaleString('en-US')
+  }
+
+  // Real numeric cpa_sgd via fmtSgd first; legacy cpa_str alias fallback.
+  function cpaCell(c: Campaign): string {
+    if (c.cpa_sgd != null) return fmtSgd(c.cpa_sgd)
+    if (c.cpa_str) return c.cpa_str
     return '—'
   }
 
@@ -122,17 +135,17 @@
         </template>
       </ElTableColumn>
 
-      <!-- New customers (conversions) -->
+      <!-- New customers (real new_customers, conversions fallback) -->
       <ElTableColumn label="New customers" width="140" align="right">
         <template #default="{ row }">
-          <span class="tabular-nums">{{ row.conversions ?? '—' }}</span>
+          <span class="tabular-nums">{{ newCustomersCell(row) }}</span>
         </template>
       </ElTableColumn>
 
       <!-- CPA -->
       <ElTableColumn label="CPA" width="100" align="right">
         <template #default="{ row }">
-          <span class="tabular-nums">{{ row.cpa_str ?? '—' }}</span>
+          <span class="tabular-nums">{{ cpaCell(row) }}</span>
         </template>
       </ElTableColumn>
 

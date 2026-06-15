@@ -43,11 +43,12 @@
 
   const rows = computed<TopCampaign[]>(() => (data.value ? normalize(data.value) : []))
 
-  /** spend_str (server pre-formatted, e.g. "S$378") preferred; numeric
-   *  spend_sgd via fmtSgd as fallback; em-dash when both absent. */
+  /** Real-field-first (reconciled with Campaigns.vue / Overview CampaignTable):
+   *  numeric spend_sgd via fmtSgd preferred; pre-formatted spend_str alias as
+   *  fallback; em-dash when both absent. */
   function spendCell(c: TopCampaign): string {
-    if (c.spend_str) return c.spend_str
     if (c.spend_sgd != null) return fmtSgd(c.spend_sgd)
+    if (c.spend_str) return c.spend_str
     return '—'
   }
 
