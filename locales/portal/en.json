@@ -46,6 +46,8 @@
   "portal.billing.subtitle": "Wallet balance, spend by brand, and invoices.",
   "portal.rewards.title": "Rewards",
   "portal.rewards.subtitle": "Vouchers, prizes, and cashback — templates, game links, issuance, and redemption.",
+  "portal.storefront.title": "Storefront",
+  "portal.storefront.subtitle": "The public brand page customers land on after scanning your in-store QR.",
   "portal.cases.subtitle": "Per-prospect research + branded 12-slide pitch deck. Three-source verified · all claims traceable to file:line.",
   "portal.geofences.subtitle": "Each store is a geofence — staff QR, redeem, and location-trigger campaigns all key off this list.",
   "portal.creatives.title": "Creatives",

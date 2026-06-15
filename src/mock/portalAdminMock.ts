@@ -609,6 +609,19 @@ const MOCKS: Record<string, unknown> = {
       }
     ]
   },
+  // Storefront — public profile keyed on the resolved brand id (demo).
+  // Carries the follower/rating/featured analytics the rebuilt view surfaces.
+  '/api/v1/storefront/demo': {
+    brand_id: 'demo',
+    display_name: 'Toast Box',
+    bio: 'Earn rewards every time you visit · 每次到店都有奖',
+    brand_color: '#F59E0B',
+    is_default: false,
+    follower_count: 1284,
+    avg_rating: 4.6,
+    rating_count: 312,
+    featured_games: ['lucky-spin-wheel', 'scratch-and-win', 'trivia-quiz-night']
+  },
   // 14-day cohort — bare CohortRow[] (newest last).
   '/api/v1/portal-admin/reports/cohort': [
     { cohort_day: '2026-05-30', new_customers: 7 },
