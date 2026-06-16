@@ -38,13 +38,38 @@
    */
   import { computed, onMounted, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { fetchOwnerReport } from '@/api/portal-admin/reports'
+  import { ElMessage } from 'element-plus'
+  import { fetchOwnerReport, exportReportsCsv } from '@/api/portal-admin/reports'
   import type { OwnerReportSummary } from '@/api/portal-admin/types'
   import TopCampaignsTable from './reports/TopCampaignsTable.vue'
   import FunnelChart from './reports/FunnelChart.vue'
   import LiveMonitor from './reports/LiveMonitor.vue'
+  import AttributionCard from './reports/AttributionCard.vue'
 
   const { t } = useI18n()
+
+  const exporting = ref(false)
+
+  async function exportCsv() {
+    exporting.value = true
+    try {
+      const res = await exportReportsCsv()
+      const blob =
+        res.data instanceof Blob ? res.data : new Blob([String(res.data)], { type: 'text/csv' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'kix-reports-cohort.csv'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (e: unknown) {
+      ElMessage.error(e instanceof Error ? e.message : 'Export failed')
+    } finally {
+      exporting.value = false
+    }
+  }
 
   const loading = ref(true)
   const error = ref<string | null>(null)
@@ -97,9 +122,14 @@
 <template>
   <div class="kix-reports p-8 space-y-6">
     <!-- Page header (mirrors `<div class="ent-page-head">` at portal.html line 1961) -->
-    <header>
-      <h1 class="text-2xl font-bold">{{ pageTitle }}</h1>
-      <p class="text-sm text-gray-500 mt-1">{{ pageSubtitle }}</p>
+    <header class="flex items-end justify-between gap-4 flex-wrap">
+      <div>
+        <h1 class="text-2xl font-bold">{{ pageTitle }}</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ pageSubtitle }}</p>
+      </div>
+      <ElButton :loading="exporting" data-testid="reports-export" @click="exportCsv">
+        Export CSV
+      </ElButton>
     </header>
 
     <!-- Owner summary card · Simple mode (legacy #owner-report, lines 1975-1991) -->
@@ -163,5 +193,9 @@
     <!-- Live monitoring · "Live now" (legacy lines 2061-2072). Composed
          from /monitoring/live + /ops/today; self-hides if both legs fail. -->
     <LiveMonitor />
+
+    <!-- Attribution by channel (legacy ~5018). Window selector + 4-model
+         credit table; self-hides until there's attribution data. -->
+    <AttributionCard />
   </div>
 </template>

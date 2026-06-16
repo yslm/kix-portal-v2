@@ -1764,6 +1764,29 @@ export type RewardTemplatesResponse =
 export type RewardsTabId = 'templates' | 'game-links' | 'issuance' | 'redemption'
 
 // ---------------------------------------------------------------------------
+// Reports · Attribution report (deferred feature, now shipped)
+// ---------------------------------------------------------------------------
+//
+// Source: portal.html ~5018 + portal_admin.py attribution_report (~2268).
+// GET /reports/attribution?window=<w> → multi-touch credit per channel.
+
+export interface AttributionRow {
+  channel: string
+  last_click?: number
+  first_touch?: number
+  linear?: number
+  time_decay?: number
+}
+
+export interface AttributionResponse {
+  window?: string
+  items?: AttributionRow[]
+  source?: string
+  updated_at?: string
+  empty_state_hint?: string | null
+}
+
+// ---------------------------------------------------------------------------
 // Rewards · Game links / Issuance / Redemption tabs + template editor
 // (deferred feature, now shipped). Endpoints verified against portal.html
 // (kixCQLoadGameLinks ~5717 / kixCQLoadIssuance ~5839 / kixCQLookup ~5853 /

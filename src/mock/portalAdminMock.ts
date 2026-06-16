@@ -721,6 +721,31 @@ const MOCKS: Record<string, unknown> = {
       }
     ]
   },
+  // Audiences · create (POST /portal/settings/audiences/{brand}).
+  '/api/v1/portal/settings/audiences/demo': {
+    ok: true,
+    audience_id: 'aud_demo_new',
+    name: 'New audience'
+  },
+  // Reports · attribution by channel (GET /reports/attribution; query stripped).
+  '/api/v1/portal-admin/reports/attribution': {
+    window: '7d_click',
+    items: [
+      {
+        channel: 'In-store QR (geofence)',
+        last_click: 142,
+        first_touch: 98,
+        linear: 120,
+        time_decay: 131
+      },
+      { channel: 'Social', last_click: 87, first_touch: 110, linear: 96, time_decay: 90 },
+      { channel: 'Referral', last_click: 53, first_touch: 41, linear: 48, time_decay: 50 },
+      { channel: 'Walk-in', last_click: 28, first_touch: 22, linear: 25, time_decay: 26 }
+    ],
+    source: 'demo · acq:demo:*',
+    updated_at: '2026-06-16T00:00:00Z',
+    empty_state_hint: null
+  },
   // Rules · per-row state toggle (PATCH /automations/{id}/state) — one key
   // per demo rule id (r-1..r-4) so the switch persists cleanly under demo.
   '/api/v1/portal-admin/automations/r-1/state': { automation: { id: 'r-1', state: 'on' } },

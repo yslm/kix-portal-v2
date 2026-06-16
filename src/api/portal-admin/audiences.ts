@@ -39,3 +39,19 @@ import type { AudiencesListResponse } from './types'
  * @see src/views/kix/Audiences.vue
  */
 export const listAudiences = () => http.get<AudiencesListResponse>('/api/v1/portal-admin/audiences')
+
+import { resolveBrandId } from '@/utils/kix/resolveBrandId'
+
+/**
+ * POST /portal/settings/audiences/{brand} — create an audience (deferred,
+ * now shipped; kixCreateAudience ~6903). Note the SETTINGS namespace, not
+ * portal-admin (the admin endpoint is a read-only demo list).
+ */
+export const createAudience = (
+  body: { name: string; source?: string; description?: string | null },
+  brandId?: string
+) =>
+  http.post(
+    `/api/v1/portal/settings/audiences/${encodeURIComponent(brandId ?? resolveBrandId())}`,
+    body
+  )

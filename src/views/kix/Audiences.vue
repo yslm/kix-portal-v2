@@ -25,9 +25,11 @@
     AUDIENCE_FILTERS,
     type AudienceFilterKey
   } from './audiences/audiencesModel'
+  import NewAudienceDialog from './audiences/NewAudienceDialog.vue'
 
   const { t } = useI18n()
 
+  const newOpen = ref(false)
   const loading = ref(true)
   const error = ref<string | null>(null)
   const all = ref<Audience[]>([])
@@ -142,9 +144,14 @@
 
 <template>
   <div class="kix-audiences p-5 space-y-5">
-    <header>
-      <h1 class="text-2xl font-bold">{{ t('portal.audiences.title') }}</h1>
-      <p class="text-sm text-gray-500 mt-1">{{ t('portal.audiences.subtitleFull') }}</p>
+    <header class="flex items-end justify-between gap-4 flex-wrap">
+      <div>
+        <h1 class="text-2xl font-bold">{{ t('portal.audiences.title') }}</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ t('portal.audiences.subtitleFull') }}</p>
+      </div>
+      <ElButton type="primary" data-testid="audiences-new" @click="newOpen = true">
+        + New audience
+      </ElButton>
     </header>
 
     <div data-testid="audience-kpis" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -218,5 +225,7 @@
         @pagination:size-change="handleSizeChange"
       />
     </ElCard>
+
+    <NewAudienceDialog v-model="newOpen" @created="load" />
   </div>
 </template>

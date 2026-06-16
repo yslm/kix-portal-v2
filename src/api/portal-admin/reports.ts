@@ -8,7 +8,8 @@ import type {
   FunnelResponse,
   MonitoringLiveResponse,
   OpsTodayResponse,
-  LiveMonitor
+  LiveMonitor,
+  AttributionResponse
 } from './types'
 
 /**
@@ -155,3 +156,18 @@ export async function fetchOwnerReport(): Promise<OwnerReportSummary> {
 
   return { newCustomers, redemptionsToday, returningPlayers }
 }
+
+/**
+ * GET /reports/attribution?window= — multi-touch attribution by channel
+ * (deferred, now shipped; legacy ~5018). window ∈ 1d_click | 7d_click |
+ * 28d_click | 1d_view.
+ */
+export const fetchAttribution = (window = '7d_click') =>
+  http.get<AttributionResponse>(`${PORTAL_ADMIN}/reports/attribution`, { params: { window } })
+
+/**
+ * GET /reports/export.csv — cohort CSV as a Blob for client-side download
+ * (deferred, now shipped; legacy ~4977). kixHttp adds the auth header.
+ */
+export const exportReportsCsv = () =>
+  http.get(`${PORTAL_ADMIN}/reports/export.csv`, { responseType: 'blob' })
