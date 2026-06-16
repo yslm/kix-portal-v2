@@ -670,6 +670,40 @@ Every merchant-facing view is rebuilt AND every deferred creation/editor flow is
 
 ---
 
+## Week 10: Remaining list-view create/edit flows (2026-06-16)
+
+**Status: DONE — the create/edit/secondary surfaces the list rebuilds left out, all backed by verified endpoints, headless-reviewed, committed.** After the Week 9 deferred-FEATURE sweep, a contract audit (Explore vs portal.html + routers) found a few list views still missing their mutation surfaces. Built the ones with REAL backends; skipped the ones with none.
+
+### Commits
+
+| Commit  | Feature                                                                     |
+| ------- | --------------------------------------------------------------------------- |
+| 1d05c11 | feat(abtests,rules): A/B test create dialog + Rules inline state toggle     |
+| 36c1ba9 | feat(audiences,reports): audience create + Reports Export CSV & Attribution |
+
+### Shipped (verified contract before building)
+
+- **AbTests** — `CreateAbTestDialog` (name + 2 campaign pickers loaded live + metric → POST /ab-tests).
+- **Rules** — State column is now an inline `ElSwitch` → PATCH /automations/{id}/state (optimistic + revert). 3-state aware (notify_only keeps a badge).
+- **Audiences** — `NewAudienceDialog` (name + source + description → POST /portal/settings/audiences/{brand} — the SETTINGS namespace, not the read-only admin list).
+- **Reports** — Export CSV header button (GET /reports/export.csv as Blob → client download) + `AttributionCard` (window selector + 4-model credit table, GET /reports/attribution; self-hides when empty).
+
+### NO-BACKEND decisions (verified absent — NOT built)
+
+- **Rules create/edit/delete** — automations have only a state-toggle endpoint; rules are authored via the Builder rule module. No POST/PATCH/DELETE.
+- **Customers detail** — legacy has no per-customer detail route or endpoint (list-only).
+
+### Result
+
+- Tests **440/440** (was 436 at session start; +8: AbTests/Rules 4 + Audiences/Reports 4). tsc zero new production errors.
+- Headless `?brand=demo` confirmed: A/B create dialog (campaign pickers + metric), 3 live rule switches, attribution card + Export button on Reports, audience dialog — all native to art-design-pro.
+
+### ▶ STATE OF THE PORTAL
+
+Every view rebuilt + every deferred creation/editor flow built + every list view with a real mutation contract now has its create/edit/toggle surface. **Production cutover (below) is the next milestone** — needs user sign-off on parity. Genuinely-no-backend leftovers stay out (Customers detail, Rules CRUD, Templates Try-demo, Geofences Mapbox map).
+
+---
+
 ## Future: Production cutover (HELD — deferred until view deepening complete)
 
 Originally Plan 7. Now deferred to after all view-deepening passes finish (Week 7 Overview + Plan 8+ for the remaining 17 views) AND user signs off on visual parity per view.
