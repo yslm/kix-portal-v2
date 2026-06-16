@@ -25,9 +25,11 @@
     ABTEST_FILTERS,
     type AbTestFilterKey
   } from './abtests/abTestsModel'
+  import CreateAbTestDialog from './abtests/CreateAbTestDialog.vue'
 
   const { t } = useI18n()
 
+  const createOpen = ref(false)
   const loading = ref(true)
   const error = ref<string | null>(null)
   const all = ref<AbTest[]>([])
@@ -140,9 +142,14 @@
 
 <template>
   <div class="kix-abtests p-5 space-y-5">
-    <header>
-      <h1 class="text-2xl font-bold">{{ t('portal.abtests.title') }}</h1>
-      <p class="text-sm text-gray-500 mt-1">{{ t('portal.abtests.subtitle') }}</p>
+    <header class="flex items-end justify-between gap-4 flex-wrap">
+      <div>
+        <h1 class="text-2xl font-bold">{{ t('portal.abtests.title') }}</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ t('portal.abtests.subtitle') }}</p>
+      </div>
+      <ElButton type="primary" data-testid="abtests-create" @click="createOpen = true">
+        + New A/B test
+      </ElButton>
     </header>
 
     <div data-testid="abtest-kpis" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -212,5 +219,7 @@
         @pagination:size-change="handleSizeChange"
       />
     </ElCard>
+
+    <CreateAbTestDialog v-model="createOpen" @created="load" />
   </div>
 </template>

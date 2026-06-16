@@ -5,12 +5,15 @@
    * `ArtTable` + KPI strip + state filter + search. Logic in
    * `rules/rulesModel.ts`. Endpoint: GET /api/v1/portal-admin/automations
    * (brand from JWT). Real fields: id / name / state / condition / action
-   * / scope / last_triggered_at. DEFERRED: per-row On/Off/Notify toggle
-   * (PATCH /automations/<id>/state), audit log, dry-run builder.
+   * / scope / last_triggered_at. The per-row On/Off toggle (PATCH
+   * /automations/<id>/state) is now live; create/edit/delete have no backend
+   * (rules are configured via the Builder rule module). Audit log + dry-run
+   * builder remain deferred.
    */
   import { computed, h, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { listRules } from '@/api/portal-admin/rules'
+  import { ElSwitch, ElMessage } from 'element-plus'
+  import { listRules, setRuleState } from '@/api/portal-admin/rules'
   import type { Rule } from '@/api/portal-admin/types'
   import type { ColumnOption } from '@/types/component'
   import StatusBadge from '@/components/StatusBadge.vue'
@@ -55,12 +58,36 @@
     { icon: 'ri:notification-3-line', label: 'Notify only', value: kpis.value.notifyOnly }
   ])
 
+  const toggling = ref<Set<string>>(new Set())
+
+  async function toggle(r: Rule, on: boolean) {
+    if (!r.id) return
+    const prev = r.state
+    r.state = on ? 'on' : 'off' // optimistic
+    toggling.value.add(r.id)
+    try {
+      await setRuleState(r.id, on ? 'on' : 'off')
+    } catch (e: unknown) {
+      r.state = prev // revert
+      ElMessage.error(e instanceof Error ? e.message : 'Failed to update rule')
+    } finally {
+      toggling.value.delete(r.id)
+    }
+  }
+
   const columns = computed<ColumnOption<Rule>[]>(() => [
     {
       prop: 'state',
       label: 'State',
       width: 120,
-      formatter: (r: Rule) => h(StatusBadge, { status: r.state })
+      formatter: (r: Rule) =>
+        r.state === 'notify_only'
+          ? h(StatusBadge, { status: r.state })
+          : h(ElSwitch, {
+              modelValue: r.state === 'on',
+              loading: r.id ? toggling.value.has(r.id) : false,
+              'onUpdate:modelValue': (v: string | number | boolean) => toggle(r, Boolean(v))
+            })
     },
     {
       prop: 'name',

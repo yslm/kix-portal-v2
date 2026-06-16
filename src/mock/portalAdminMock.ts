@@ -721,6 +721,12 @@ const MOCKS: Record<string, unknown> = {
       }
     ]
   },
+  // Rules · per-row state toggle (PATCH /automations/{id}/state) — one key
+  // per demo rule id (r-1..r-4) so the switch persists cleanly under demo.
+  '/api/v1/portal-admin/automations/r-1/state': { automation: { id: 'r-1', state: 'on' } },
+  '/api/v1/portal-admin/automations/r-2/state': { automation: { id: 'r-2', state: 'on' } },
+  '/api/v1/portal-admin/automations/r-3/state': { automation: { id: 'r-3', state: 'notify_only' } },
+  '/api/v1/portal-admin/automations/r-4/state': { automation: { id: 'r-4', state: 'off' } },
   // Billing · top-up (POST /wallet/topup) + add payment method.
   '/api/v1/portal-admin/wallet/topup': {
     balance_sgd: 2092.5,

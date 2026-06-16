@@ -37,3 +37,18 @@ import type { RulesListResponse } from './types'
  * @see src/views/kix/Rules.vue
  */
 export const listRules = () => http.get<RulesListResponse>('/api/v1/portal-admin/automations')
+
+/**
+ * PATCH /automations/{id}/state — toggle a rule (deferred, now shipped;
+ * kixToggleRule ~7388). state ∈ on|off|notify_only. (Backend has no
+ * create/edit/delete for automations — toggle is the only mutation.)
+ */
+export const setRuleState = (
+  ruleId: string,
+  state: 'on' | 'off' | 'notify_only',
+  notify?: boolean
+) =>
+  http.patch(`/api/v1/portal-admin/automations/${encodeURIComponent(ruleId)}/state`, {
+    state,
+    ...(notify === undefined ? {} : { notify })
+  })

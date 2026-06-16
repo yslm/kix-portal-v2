@@ -33,3 +33,15 @@ import type { AbTestsListResponse } from './types'
  * @see src/views/kix/AbTests.vue
  */
 export const listAbTests = () => http.get<AbTestsListResponse>('/api/v1/portal-admin/ab-tests')
+
+/**
+ * POST /ab-tests — create a test (deferred, now shipped; kixCreateAbTest
+ * ~7219). Returns the created record. metric ∈ CTR|CPA|Conversion|
+ * Redemption|Lift.
+ */
+export const createAbTest = (body: {
+  name: string
+  campaign_a_id: string
+  campaign_b_id: string
+  metric: string
+}) => http.post('/api/v1/portal-admin/ab-tests', body)
