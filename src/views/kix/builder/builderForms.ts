@@ -390,6 +390,9 @@ export interface PublishBody {
   schedule: Record<string, unknown>
   safety: Record<string, unknown>
   tournament: Record<string, unknown>
+  // index signature so the body is assignable to the API's
+  // `Record<string, unknown>` param (publishCampaign).
+  [key: string]: unknown
 }
 
 export function assemblePublishBody(

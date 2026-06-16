@@ -200,12 +200,7 @@
         <template #header>
           <span class="font-semibold text-gray-900">Spend by brand</span>
         </template>
-        <ArtTable
-          :data="perBrand"
-          :columns="brandColumns"
-          :show-table-header="false"
-          :pagination="false"
-        />
+        <ArtTable :data="perBrand" :columns="brandColumns" :show-table-header="false" />
       </ElCard>
 
       <!-- Invoices · ArtTable (absorbs the legacy view-invoices section) -->
@@ -220,13 +215,7 @@
         >
           No invoices yet.
         </div>
-        <ArtTable
-          v-else
-          :data="invoices"
-          :columns="invoiceColumns"
-          :show-table-header="false"
-          :pagination="false"
-        />
+        <ArtTable v-else :data="invoices" :columns="invoiceColumns" :show-table-header="false" />
       </ElCard>
     </template>
 

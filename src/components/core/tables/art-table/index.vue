@@ -124,7 +124,7 @@
     loading?: boolean
     /** 列渲染配置 */
     columns?: ColumnOption[]
-    /** 分页状态 */
+    /** 分页状态（省略则不渲染分页，等同 showPagination 的 falsy 分支） */
     pagination?: PaginationConfig
     /** 分页配置 */
     paginationOptions?: PaginationOptions

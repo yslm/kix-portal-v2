@@ -63,6 +63,12 @@
     emit('field-change', { field: id, value })
   }
 
+  /** Select model-value, typed for ElSelect — kept in a helper so the
+   *  template binding has no `|` (eslint reads it as a deprecated filter). */
+  function selectModel(id: string): string | number {
+    return draft.value[id] as string | number
+  }
+
   function toggleDay(d: number) {
     const mask = (draft.value.weekday_mask as number[]) ?? []
     draft.value.weekday_mask = mask.includes(d) ? mask.filter((x) => x !== d) : [...mask, d]
@@ -98,10 +104,10 @@
         <!-- select -->
         <ElSelect
           v-if="f.type === 'select'"
-          :model-value="draft[f.id]"
+          :model-value="selectModel(f.id)"
           class="w-full"
           :data-testid="`field-${f.id}`"
-          @update:model-value="(v: unknown) => setField(f.id, v)"
+          @update:model-value="(v: string | number | boolean) => setField(f.id, v)"
         >
           <ElOption
             v-for="o in optionsFor(f.id, f.options)"
@@ -128,7 +134,7 @@
           v-else-if="f.type === 'toggle'"
           :model-value="Boolean(draft[f.id])"
           :data-testid="`field-${f.id}`"
-          @update:model-value="(v: boolean) => setField(f.id, v)"
+          @update:model-value="(v: string | number | boolean) => setField(f.id, Boolean(v))"
         />
 
         <!-- weekday mask -->
@@ -163,7 +169,9 @@
           <ElSwitch
             :model-value="Boolean(safety(f.id).enabled)"
             :data-testid="`safety-toggle-${f.id}`"
-            @update:model-value="(v: boolean) => setSafetyEnabled(f.id, v)"
+            @update:model-value="
+              (v: string | number | boolean) => setSafetyEnabled(f.id, Boolean(v))
+            "
           />
           <ElInputNumber
             v-if="f.min !== undefined && safety(f.id).enabled"

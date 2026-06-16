@@ -7,6 +7,7 @@ import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import ModuleEditor from '../ModuleEditor.vue'
 import { MODULE_FIELDS } from '../builderForms'
+import type { BuildModuleId } from '../builderModel'
 
 const stubs = {
   ElDialog: {
@@ -34,7 +35,11 @@ const stubs = {
   ElButton: { emits: ['click'], template: '<button @click="$emit(\'click\')"><slot /></button>' }
 }
 
-function mountEditor(moduleId: string, initial: Record<string, unknown>, dynamicOptions = {}) {
+function mountEditor(
+  moduleId: BuildModuleId,
+  initial: Record<string, unknown>,
+  dynamicOptions = {}
+) {
   return mount(ModuleEditor, {
     props: { modelValue: true, moduleId, title: 't', initial, dynamicOptions },
     global: { stubs }

@@ -35,7 +35,7 @@ const stubs = {
     props: ['modelValue'],
     emits: ['open'],
     // real ElDialog fires `open` when v-model becomes true (incl. initial)
-    mounted() {
+    mounted(this: { modelValue: boolean; $emit: (e: string) => void }) {
       if (this.modelValue) this.$emit('open')
     },
     template: '<div v-if="modelValue"><slot /></div>'

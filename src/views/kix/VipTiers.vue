@@ -181,13 +181,7 @@
         <template #header>
           <span class="font-semibold text-gray-900">Tier ladder</span>
         </template>
-        <ArtTable
-          :loading="loading"
-          :data="ladder"
-          :columns="columns"
-          :show-table-header="false"
-          :pagination="false"
-        />
+        <ArtTable :loading="loading" :data="ladder" :columns="columns" :show-table-header="false" />
       </ElCard>
 
       <!-- Member distribution · restyled bar card -->
